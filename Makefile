@@ -16,6 +16,6 @@ libs += -L$(CYCLUS_ROOT)/lib
 libs += -lcyclus -lhdf5 -lboost_system
 
 cymetric: main.cc
-	g++ main.cc $(includes) $(libs) -o cymetric
+	g++ main.cc $(includes) $(libs) -std=c++11 -o cymetric
 
 
