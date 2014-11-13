@@ -1,6 +1,5 @@
 #include <iostream>
 #include <cyclus.h>
-#include <map>
 #include <sqlite_back.h>
 #include "prettyprint.hpp"
 
@@ -11,9 +10,12 @@ int main(int argc, char* argv[]) {
   cout << "file name: " << fname << "\n";
   cyclus::FullBackend* fback = new cyclus::SqliteBack(fname);
   cyclus::QueryResult result = fback->Query(table, NULL);
-  std::vector<std::string> fld = result.fields;
-  cout << fld << std::endl;
-  cout << result << std::endl;
+  for (int i = 0; i < result.rows.size(); ++i) {
+    cout << result.GetVal<std::string>("SimID", i) << "\n";
+    cout << result.GetVal<int>("QualID", i) << "\n";
+    cout << result.GetVal<int>("NucID", i) << "\n";
+    cout << result.GetVal<double>("MassFrac", i) << "\n";
+  }
   delete fback;
   return 0;
 }
