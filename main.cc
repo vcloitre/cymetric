@@ -6,28 +6,28 @@
 
 void dbtype(cyclus::DbTypes t, void* x) {
   switch(t){
-    case "BOOL":
+    case 0:
       (bool*)x;
       break;
-    case "INT":
+    case 1:
       (int*)x;
       break;
-    case "FLOAT":
+    case 2:
       (float*)x;
       break;
-    case "DOUBLE":
+    case 3:
       (double*)x;
       break;
-    case "STRING":
+    case 4:
       (std::string*)x;
       break;
-    case "VL_STRING":
+    case 5:
       (cyclus::vl_string*)x;
       break;
-    case "BLOB":
-      (cyclus::blob*)x;
+    case 6:
+      (cyclus::Blob*)x;
       break;
-    case "UUID":
+    case 7:
       (boost::uuids::uuid*)x;
       break;
   }
