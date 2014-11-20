@@ -35,8 +35,15 @@ std::string ToStr(cyclus::DbTypes type, boost::spirit::hold_any val) {
   return ss.str();
 }
 
+std::string formatrow(std::vector<std::string>) {
+ // must format columns one of these days 
+}
+
 int main(int argc, char* argv[]) {
   using std::cout;
+  if (argc < 3) {
+    cout << "Derp, need at least 2 arguments\n";
+  }
   std::string fname = std::string(argv[1]);
   std::string table = std::string(argv[2]);
   cout << "file name: " << fname << "\n";
@@ -46,16 +53,17 @@ int main(int argc, char* argv[]) {
   cout << "\n" << "SimID: "; 
   cout << result.GetVal<boost::uuids::uuid>("SimId", 0) << "\n\n";
   std::vector<std::string> cols = result.fields;
-  std::vector<cyclus::QueryRow> lines = result.rows;
-  for (int i = 0; i < lines.size(); ++i) {
-    cout << lines << "\n";
-
-//    for (int j = 0; j < cols.size(); ++j) {
-//     cyclus::DbTypes type = result.types[j];
-//      boost::spirit::hold_any val = "";
-//      std::string dtype = ToStr(type, val);
-//      cout << result.GetVal<dtype>(cols[j], i);
-//    }
+  std::list<std::string> collist(cols.begin(), cols.end());
+  collist.pop_front();
+  std::vector<cyclus::QueryRow> rows = result.rows;
+  cout << collist << "\n"; //  cout << formatrow(cols) << "\n";
+  for (int i = 0; i < rows.size(); ++i) {
+    std::vector<std::string> stringrow;
+    for (int j = 1; j < cols.size(); ++j) {
+      std::string s = ToStr(result.types[j], rows[i][j]);
+      stringrow.push_back(s);
+    }
+  cout << stringrow << "\n"; //  cout << formatrow(stringrow) << "\n";  
   }
   delete fback;
   return 0;
