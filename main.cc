@@ -39,6 +39,15 @@ std::string formatrow(std::vector<std::string>) {
  // must format columns one of these days 
 }
 
+cyclus::Cond ParseCond(std::string c) {
+  using std::string;
+  size_t i = c.find("<");
+  string field = c.substr(0, i);
+  int value = atoi(c.substr(i+1).c_str());
+  cyclus::Cond cond = cyclus::Cond(field, string("<"), value);
+  return cond;
+}
+
 int main(int argc, char* argv[]) {
   using std::cout;
   if (argc < 3) {
@@ -50,15 +59,22 @@ int main(int argc, char* argv[]) {
   cout << "file name: " << fname << "\n";
   std::string table = std::string(argv[2]);
   cout << "table name: " << table << "\n";
-  char const * conds = NULL;
-  if (argc > 3) {
-    std::vector<cyclus::Cond> conds = std::string(argv[3]);
-    cout << "filter conditions: " << conds << "\n";
+  std::vector<cyclus::Cond> conds;
+  //if (argc > 3) {
+  //  std::vector<cyclus::Cond> conds = std::string(argv[3]);
+  //  cout << "filter conditions: " << conds << "\n";
+  //}
+  for (int i = 3; i < argc; ++i) {
+    conds.push_back(ParseCond(std::string(argv[i])));
   }
 
   //get table from cyclus; print SimId and columns
   cyclus::FullBackend* fback = new cyclus::SqliteBack(fname);
-  cyclus::QueryResult result = fback->Query(table, conds);
+  cyclus::QueryResult result;
+  if (conds.size() == 0)
+    result = fback->Query(table, NULL);
+  else
+    result = fback->Query(table, &conds);
   cout << "\n" << "SimID: "; 
   cout << result.GetVal<boost::uuids::uuid>("SimId", 0) << "\n\n";
   std::vector<std::string> cols = result.fields;
