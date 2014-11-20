@@ -44,17 +44,28 @@ int main(int argc, char* argv[]) {
   if (argc < 3) {
     cout << "Derp, need at least 2 arguments\n";
   }
+
+  //get and print arguments
   std::string fname = std::string(argv[1]);
-  std::string table = std::string(argv[2]);
   cout << "file name: " << fname << "\n";
+  std::string table = std::string(argv[2]);
   cout << "table name: " << table << "\n";
+  char const * conds = NULL;
+  if (argc > 3) {
+    std::vector<cyclus::Cond> conds = std::string(argv[3]);
+    cout << "filter conditions: " << conds << "\n";
+  }
+
+  //get table from cyclus; print SimId and columns
   cyclus::FullBackend* fback = new cyclus::SqliteBack(fname);
-  cyclus::QueryResult result = fback->Query(table, NULL);
+  cyclus::QueryResult result = fback->Query(table, conds);
   cout << "\n" << "SimID: "; 
   cout << result.GetVal<boost::uuids::uuid>("SimId", 0) << "\n\n";
   std::vector<std::string> cols = result.fields;
   std::list<std::string> collist(cols.begin(), cols.end());
   collist.pop_front();
+
+  //print rows of table
   std::vector<cyclus::QueryRow> rows = result.rows;
   cout << collist << "\n"; //  cout << formatrow(cols) << "\n";
   for (int i = 0; i < rows.size(); ++i) {
@@ -65,6 +76,7 @@ int main(int argc, char* argv[]) {
     }
   cout << stringrow << "\n"; //  cout << formatrow(stringrow) << "\n";  
   }
+
   delete fback;
   return 0;
 }
