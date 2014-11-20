@@ -50,15 +50,20 @@ int main(int argc, char* argv[]) {
   cout << "file name: " << fname << "\n";
   std::string table = std::string(argv[2]);
   cout << "table name: " << table << "\n";
-  char const * conds = NULL;
-  if (argc > 3) {
-    std::vector<cyclus::Cond> conds = std::string(argv[3]);
-    cout << "filter conditions: " << conds << "\n";
-  }
+  std::vector<cyclus::Cond> conds;
+//  if (argc > 3) {
+//    std::vector<cyclus::Cond> conds = std::string(argv[3]);
+//    cout << "filter conditions: " << conds << "\n";
+//  }
 
   //get table from cyclus; print SimId and columns
   cyclus::FullBackend* fback = new cyclus::SqliteBack(fname);
-  cyclus::QueryResult result = fback->Query(table, conds);
+  cyclus::QueryResult result;
+  if (conds.size() == 0) {
+    result = fback->Query(table, NULL);
+  } else {
+    result = fback->Query(table, &conds);
+  }
   cout << "\n" << "SimID: "; 
   cout << result.GetVal<boost::uuids::uuid>("SimId", 0) << "\n\n";
   std::vector<std::string> cols = result.fields;
