@@ -40,13 +40,19 @@ std::string formatrow(std::vector<std::string>) {
 }
 
 cyclus::Cond ParseCond(std::string c) {
-  
-//  std::string op = OpToStr();
-  size_t i = c.find("<");
+  std::vector<std::string> ops = {"<", ">", "<=", ">=", "==", "!="};
+  std::string op;
+  bool exists = false;
+  for (int i = 0; !exists; ++i) {
+    op = ops[i];
+    exists = c.find(op) != std::string::npos; 
+  }
+  size_t i = c.find(op);
   std::string field = c.substr(0, i);
   int value = atoi(c.substr(i+1).c_str());
-  cyclus::Cond cond = cyclus::Cond(field, std::string("<"), value);
-  std::cout << "filter conditions: " << field << " < " << value << "\n";
+  cyclus::Cond cond = cyclus::Cond(field, op, value);
+  
+  std::cout << "filter conditions: " << field << " " << op  << " " << value << "\n";
   return cond;
 }
 
