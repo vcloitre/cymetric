@@ -4,31 +4,31 @@
 #include <sqlite_back.h>
 #include "prettyprint.hpp"
 
-std::string ToStr(cyclus::DbTypes type, boost::spirit::hold_any val) {
+std::string ValToStr(cyclus::DbTypes type, boost::spirit::hold_any val) {
   std::stringstream ss;
   switch(type){
-    case 0:
+    case cyclus::BOOL:
       ss << val.cast<bool>();
       break;
-    case 1:
+    case cyclus::INT:
       ss << val.cast<int>();
       break;
-    case 2:
+    case cyclus::FLOAT:
       ss << val.cast<float>();
       break;
-    case 3:
+    case cyclus::DOUBLE:
       ss << val.cast<double>();
       break;
-    case 4:
+    case cyclus::STRING:
       ss << val.cast<std::string>();
       break;
-    case 5:
+    case cyclus::VL_STRING:
       ss << val.cast<std::string>();
       break;
-//    case 6:
-//      ss << val.cast<cyclus::Blob>();
-//      break;
-    case 7:
+    case cyclus::BLOB:
+      ss << val.cast<cyclus::Blob>().str();
+      break;
+    case cyclus::UUID:
       ss << val.cast<boost::uuids::uuid>();
       break;
   }
@@ -40,11 +40,13 @@ std::string formatrow(std::vector<std::string>) {
 }
 
 cyclus::Cond ParseCond(std::string c) {
-  using std::string;
+  
+//  std::string op = OpToStr();
   size_t i = c.find("<");
-  string field = c.substr(0, i);
+  std::string field = c.substr(0, i);
   int value = atoi(c.substr(i+1).c_str());
-  cyclus::Cond cond = cyclus::Cond(field, string("<"), value);
+  cyclus::Cond cond = cyclus::Cond(field, std::string("<"), value);
+  std::cout << "filter conditions: " << field << " < " << value << "\n";
   return cond;
 }
 
@@ -60,14 +62,10 @@ int main(int argc, char* argv[]) {
   std::string table = std::string(argv[2]);
   cout << "table name: " << table << "\n";
   std::vector<cyclus::Cond> conds;
-  //if (argc > 3) {
-  //  std::vector<cyclus::Cond> conds = std::string(argv[3]);
-  //  cout << "filter conditions: " << conds << "\n";
-  //}
   for (int i = 3; i < argc; ++i) {
     conds.push_back(ParseCond(std::string(argv[i])));
   }
-
+  
   //get table from cyclus; print SimId and columns
   cyclus::FullBackend* fback = new cyclus::SqliteBack(fname);
   cyclus::QueryResult result;
@@ -88,7 +86,7 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < rows.size(); ++i) {
     std::vector<std::string> stringrow;
     for (int j = 1; j < cols.size(); ++j) {
-      std::string s = ToStr(result.types[j], rows[i][j]);
+      std::string s = ValToStr(result.types[j], rows[i][j]);
       stringrow.push_back(s);
     }
   cout << stringrow << "\n"; //  cout << formatrow(stringrow) << "\n";  
