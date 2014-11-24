@@ -4,6 +4,7 @@
 #include <sqlite_back.h>
 #include "prettyprint.hpp"
 
+//ValToStr converts any data type to a string for printing 
 std::string ValToStr(cyclus::DbTypes type, boost::spirit::hold_any val) {
   std::stringstream ss;
   switch(type){
@@ -35,23 +36,39 @@ std::string ValToStr(cyclus::DbTypes type, boost::spirit::hold_any val) {
   return ss.str();
 }
 
+//formatrow pretty prints the table
 std::string formatrow(std::vector<std::string>) {
  // must format columns one of these days 
 }
 
+//ParseCond separates the conditions string for formatting 
 cyclus::Cond ParseCond(std::string c) {
   std::vector<std::string> ops = {"<", ">", "<=", ">=", "==", "!="};
+
+  //finds the logical operator in the string
   std::string op;
   bool exists = false;
   for (int i = 0; !exists; ++i) {
     op = ops[i];
     exists = c.find(op) != std::string::npos; 
   }
+
+  //finds the location of the logical operator
   size_t i = c.find(op);
+
+  //gives substrings separated by the location of the operator
   std::string field = c.substr(0, i);
-  int value = atoi(c.substr(i+1).c_str());
+  char* cop = (char*)op.c_str(); 
+  size_t j = strlen(cop);
+  int value;
+  if (j == 2) {
+  value = atoi(c.substr(i+2).c_str());
+  } else {
+  value = atoi(c.substr(i+1).c_str());
+  }
+
+  //populates cyclus-relevant conditions and prints them
   cyclus::Cond cond = cyclus::Cond(field, op, value);
-  
   std::cout << "filter conditions: " << field << " " << op  << " " << value << "\n";
   return cond;
 }
