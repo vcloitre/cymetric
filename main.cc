@@ -5,7 +5,7 @@
 #include "prettyprint.hpp"
 
 //ValToStr converts any data type to a string for printing 
-std::string ValToStr(cyclus::DbTypes type, boost::spirit::hold_any val) {
+std::string ValToStr(boost::spirit::hold_any val, cyclus::DbTypes type) {
   std::stringstream ss;
   switch(type){
     case cyclus::BOOL:
@@ -41,6 +41,24 @@ std::string formatrow(std::vector<std::string>) {
  // must format columns one of these days 
 }
 
+//TypeConv converts the input string value to the relevant data type
+boost::spirit::hold_any TypeConv(std::string valstr, std::string field){
+  boost::spirit::hold_any val;
+  if (field == "NucId") {
+    val = strtol(valstr.c_str(), NULL, 10);
+  } else if (field == "MassFrac") {
+    val = atof(valstr.c_str());
+  } else {
+    std::cout << "Derp, data type not supported\n";
+  }
+  return val;
+}
+
+//prints a condition
+void PrintCond(std::string field, std::string op, std::string valstr){
+  std::cout << "filter conditions: " << field << " " << op  << " " << valstr << "\n";
+}
+
 //ParseCond separates the conditions string for formatting 
 cyclus::Cond ParseCond(std::string c) {
   std::vector<std::string> ops = {"<", ">", "<=", ">=", "==", "!="};
@@ -60,16 +78,19 @@ cyclus::Cond ParseCond(std::string c) {
   std::string field = c.substr(0, i);
   char* cop = (char*)op.c_str(); 
   size_t j = strlen(cop);
-  int value;
+  boost::spirit::hold_any value;
+  std::string valstr;
   if (j == 2) {
-  value = atoi(c.substr(i+2).c_str());
+    valstr = c.substr(i+2);
+    value = TypeConv(valstr, field);
   } else {
-  value = atoi(c.substr(i+1).c_str());
+    valstr = c.substr(i+1);
+    value = TypeConv(valstr, field);
   }
 
-  //populates cyclus-relevant conditions and prints them
+  //populates cyclus-relevant condition
   cyclus::Cond cond = cyclus::Cond(field, op, value);
-  std::cout << "filter conditions: " << field << " " << op  << " " << value << "\n";
+  PrintCond(field, op, valstr);
   return cond;
 }
 
@@ -109,7 +130,7 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < rows.size(); ++i) {
     std::vector<std::string> stringrow;
     for (int j = 1; j < cols.size(); ++j) {
-      std::string s = ValToStr(result.types[j], rows[i][j]);
+      std::string s = ValToStr(rows[i][j], result.types[j]);
       stringrow.push_back(s);
     }
   cout << stringrow << "\n"; //  cout << formatrow(stringrow) << "\n";  
