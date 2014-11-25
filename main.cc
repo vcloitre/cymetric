@@ -48,7 +48,7 @@ bool StringToBool(std::string str) {
 
 //TypeConv looks up data type of string value by querying the 
 //table (because we can't do anything else just yet)
-boost::spirit::hold_any TypeConv(std::string valstr, std::string field, std::string table, std::string fname) {
+boost::spirit::hold_any StrToType(std::string valstr, std::string field, std::string table, std::string fname) {
 
   //initiate query for table in a database
   cyclus::FullBackend* fback = new cyclus::SqliteBack(fname);
@@ -59,21 +59,18 @@ boost::spirit::hold_any TypeConv(std::string valstr, std::string field, std::str
   std::string cycfield;
   bool fieldmatch = false;
   std::vector<std::string> cols = result.fields;
-  try {
-    for (i = 0; !fieldmatch || i < cols.size(); ++i) {
-      fieldmatch = cycfield == field;
-//      type = result.types[i];
-    }
-  } catch (int e) {
-    std::cout << "Derp, cannot find field. Check spelling!" << e << "\n";
+  for (i = 0; !fieldmatch || i < cols.size(); ++i) {
+    fieldmatch = cycfield == field;
+//    type = result.types[i];
   }
+  //std::cout << "Derp, cannot find field. Check spelling!" << e << "\n";
   cyclus::DbTypes type = result.types[i];
 
   //give value a type
   boost::spirit::hold_any val;
   switch(type){
     case cyclus::BOOL:
-//      val = StringToBool(valstr);
+      //val = StringToBool(valstr);
       break;
     case cyclus::INT:
       val = strtol(valstr.c_str(), NULL, 10);
@@ -128,10 +125,10 @@ cyclus::Cond ParseCond(std::string c, std::string table, std::string fname) {
   std::string valstr;
   if (j == 2) {
     valstr = c.substr(i+2);
-    value = TypeConv(valstr, field, table, fname);
+    value = StrToType(valstr, field, table, fname);
   } else {
     valstr = c.substr(i+1);
-    value = TypeConv(valstr, field, table, fname);
+    value = StrToType(valstr, field, table, fname);
   }
 
   //populates cyclus-relevant condition
