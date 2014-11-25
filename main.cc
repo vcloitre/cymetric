@@ -41,15 +41,61 @@ std::string formatrow(std::vector<std::string>) {
  // must format columns one of these days 
 }
 
-//TypeConv converts the input string value to the relevant data type
-boost::spirit::hold_any TypeConv(std::string valstr, std::string field){
+//StringToBool converts a valid string to a boolean
+bool StringToBool(std::string str) {
+  //populate me!
+}
+
+//TypeConv looks up data type of string value by querying the 
+//table (because we can't do anything else just yet)
+boost::spirit::hold_any TypeConv(std::string valstr, std::string field, std::string table, std::string fname) {
+
+  //initiate query for table in a database
+  cyclus::FullBackend* fback = new cyclus::SqliteBack(fname);
+  cyclus::QueryResult result = fback->Query(table, NULL);
+
+  //find type of column
+  int i;
+  std::string cycfield;
+  bool fieldmatch = false;
+  std::vector<std::string> cols = result.fields;
+  try {
+    for (i = 0; !fieldmatch || i < cols.size(); ++i) {
+      fieldmatch = cycfield == field;
+//      type = result.types[i];
+    }
+  } catch (int e) {
+    std::cout << "Derp, cannot find field. Check spelling!" << e << "\n";
+  }
+  cyclus::DbTypes type = result.types[i];
+
+  //give value a type
   boost::spirit::hold_any val;
-  if (field == "NucId") {
-    val = strtol(valstr.c_str(), NULL, 10);
-  } else if (field == "MassFrac") {
-    val = atof(valstr.c_str());
-  } else {
-    std::cout << "Derp, data type not supported\n";
+  switch(type){
+    case cyclus::BOOL:
+//      val = StringToBool(valstr);
+      break;
+    case cyclus::INT:
+      val = strtol(valstr.c_str(), NULL, 10);
+      break;
+    case cyclus::FLOAT:
+      val = atof(valstr.c_str());
+      break;
+    case cyclus::DOUBLE:
+      val = atof(valstr.c_str());
+      break;
+    case cyclus::STRING:
+      val = valstr;
+      break;
+    case cyclus::VL_STRING:
+      val = valstr;
+      break;
+    case cyclus::BLOB:
+      std::cout << "Derp, Blob not supported for filtering\n";
+      break;
+    case cyclus::UUID:
+      val = boost::lexical_cast<boost::uuids::uuid>(valstr);
+      break;
   }
   return val;
 }
@@ -60,7 +106,7 @@ void PrintCond(std::string field, std::string op, std::string valstr){
 }
 
 //ParseCond separates the conditions string for formatting 
-cyclus::Cond ParseCond(std::string c) {
+cyclus::Cond ParseCond(std::string c, std::string table, std::string fname) {
   std::vector<std::string> ops = {"<", ">", "<=", ">=", "==", "!="};
 
   //finds the logical operator in the string
@@ -82,10 +128,10 @@ cyclus::Cond ParseCond(std::string c) {
   std::string valstr;
   if (j == 2) {
     valstr = c.substr(i+2);
-    value = TypeConv(valstr, field);
+    value = TypeConv(valstr, field, table, fname);
   } else {
     valstr = c.substr(i+1);
-    value = TypeConv(valstr, field);
+    value = TypeConv(valstr, field, table, fname);
   }
 
   //populates cyclus-relevant condition
@@ -107,7 +153,7 @@ int main(int argc, char* argv[]) {
   cout << "table name: " << table << "\n";
   std::vector<cyclus::Cond> conds;
   for (int i = 3; i < argc; ++i) {
-    conds.push_back(ParseCond(std::string(argv[i])));
+    conds.push_back(ParseCond(std::string(argv[i]), table, fname));
   }
   
   //get table from cyclus; print SimId and columns
