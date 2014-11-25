@@ -3,6 +3,7 @@
 #include <cyclus.h>
 #include <sqlite_back.h>
 #include "prettyprint.hpp"
+//#include <boost/algorithm/string.hpp>  
 
 //ValToStr converts any data type to a string for printing 
 std::string ValToStr(boost::spirit::hold_any val, cyclus::DbTypes type) {
@@ -43,7 +44,17 @@ std::string formatrow(std::vector<std::string>) {
 
 //StringToBool converts a valid string to a boolean
 bool StringToBool(std::string str) {
-  //populate me!
+  boost::algorithm::to_lower(str);
+//  std::string lowstr;
+//  for (std::string::size_type i = 0; i < str.length(); ++i) {
+//    lowstr = std::tolower(str[i]);
+//  }
+  if (str=="true" || str=="t" || str=="1") {
+    return true;
+  } else if (str=="false" || str=="f" || str=="0") {
+    return false;
+  }
+//  throw exception("Derp, bad bool string!");
 }
 
 //StrToType looks up data type of string value by querying the 
@@ -58,10 +69,12 @@ boost::spirit::hold_any StrToType(std::string valstr, std::string field, std::st
   bool fieldmatch = false;
   std::vector<std::string> cols = result.fields;
   cyclus::DbTypes type;
-  for (int i = 0; !fieldmatch || i < cols.size(); ++i) {
+  for (int i = 0; i < cols.size(); ++i) {
     std::string cycfield = cols[i];
-    fieldmatch = cycfield == field;
-    type = result.types[i];
+    if (cycfield==field) { 
+      type = result.types[i];
+      break;
+    }
   }
   //std::cout << "Derp, cannot find field. Check spelling!" << e << "\n";
 
@@ -69,16 +82,16 @@ boost::spirit::hold_any StrToType(std::string valstr, std::string field, std::st
   boost::spirit::hold_any val;
   switch(type){
     case cyclus::BOOL:
-      //val = StringToBool(valstr);
+      val = StringToBool(valstr);
       break;
     case cyclus::INT:
-      val = strtol(valstr.c_str(), NULL, 10);
+      val = static_cast<int>(strtol(valstr.c_str(), NULL, 10));
       break;
     case cyclus::FLOAT:
-      val = atof(valstr.c_str());
+      val = strtof(valstr.c_str(), NULL);
       break;
     case cyclus::DOUBLE:
-      val = atof(valstr.c_str());
+      val = strtod(valstr.c_str(), NULL);
       break;
     case cyclus::STRING:
       val = valstr;
