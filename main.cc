@@ -46,7 +46,7 @@ bool StringToBool(std::string str) {
   //populate me!
 }
 
-//TypeConv looks up data type of string value by querying the 
+//StrToType looks up data type of string value by querying the 
 //table (because we can't do anything else just yet)
 boost::spirit::hold_any StrToType(std::string valstr, std::string field, std::string table, std::string fname) {
 
@@ -55,16 +55,15 @@ boost::spirit::hold_any StrToType(std::string valstr, std::string field, std::st
   cyclus::QueryResult result = fback->Query(table, NULL);
 
   //find type of column
-  int i;
-  std::string cycfield;
   bool fieldmatch = false;
   std::vector<std::string> cols = result.fields;
-  for (i = 0; !fieldmatch || i < cols.size(); ++i) {
+  cyclus::DbTypes type;
+  for (int i = 0; !fieldmatch || i < cols.size(); ++i) {
+    std::string cycfield = cols[i];
     fieldmatch = cycfield == field;
-//    type = result.types[i];
+    type = result.types[i];
   }
   //std::cout << "Derp, cannot find field. Check spelling!" << e << "\n";
-  cyclus::DbTypes type = result.types[i];
 
   //give value a type
   boost::spirit::hold_any val;
