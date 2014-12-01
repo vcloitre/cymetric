@@ -3,7 +3,6 @@
 #include <cyclus.h>
 #include <sqlite_back.h>
 #include "prettyprint.hpp"
-//#include <boost/algorithm/string.hpp>  
 
 //ValToStr converts any data type to a string for printing 
 std::string ValToStr(boost::spirit::hold_any val, cyclus::DbTypes type) {
@@ -75,7 +74,6 @@ boost::spirit::hold_any StrToType(std::string valstr, std::string field, std::st
       break;
     }
   }
-  //std::cout << "Derp, cannot find field. Check spelling!" << e << "\n";
 
   //give value a type
   boost::spirit::hold_any val;
@@ -162,9 +160,18 @@ int main(int argc, char* argv[]) {
   std::vector<cyclus::Cond> conds;
   for (int i = 3; i < argc; ++i) {
     conds.push_back(ParseCond(std::string(argv[i]), table, fname));
-  }
-  
-  //get table from cyclus; print SimId and columns
+	}
+//  size_t endpos = str.find_last_not_of(" \t");
+//  if( string::npos != endpos ) {
+//    str = str.substr( 0, endpos+1 );
+//  }
+//  std::string m = "metric";
+//  if (argv[3].compare(0, m.length(), m) == 0) {
+//    std::string metric = std:string(argv[3]);
+//    cout << "metric to compute: " << metric << "\n";
+//  }
+
+//get table from cyclus; print SimId and columns
   cyclus::FullBackend* fback = new cyclus::SqliteBack(fname);
   cyclus::QueryResult result;
   if (conds.size() == 0) {
