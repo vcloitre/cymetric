@@ -44,17 +44,16 @@ std::string formatrow(std::vector<std::string>) {
 
 //StringToBool converts a valid string to a boolean
 bool StringToBool(std::string str) {
-  boost::algorithm::to_lower(str);
-//  std::string lowstr;
-//  for (std::string::size_type i = 0; i < str.length(); ++i) {
-//    lowstr = std::tolower(str[i]);
-//  }
-  if (str=="true" || str=="t" || str=="1") {
-    return true;
-  } else if (str=="false" || str=="f" || str=="0") {
-    return false;
-  }
-//  throw exception("Derp, bad bool string!");
+ 	boost::algorithm::to_lower(str);
+ 	std::string lowstr;
+ 	for (std::string::size_type i = 0; i < str.length(); ++i) {
+   	lowstr = std::tolower(str[i]);
+ 	}
+ 	if (str=="true" || str=="t" || str=="1") {
+   	return true;
+ 	} else if (str=="false" || str=="f" || str=="0") {
+   	return false;
+ 	}
 }
 
 //StrToType looks up data type of string value by querying the 
@@ -174,7 +173,12 @@ int main(int argc, char* argv[]) {
     result = fback->Query(table, &conds);
   }
   cout << "\n" << "SimID: "; 
-  cout << result.GetVal<boost::uuids::uuid>("SimId", 0) << "\n\n";
+
+  try {
+  	cout << result.GetVal<boost::uuids::uuid>("SimId", 0) << "\n\n";
+  } catch (...) {
+		cout << "Derp, invalid query!\n";
+	}
   std::vector<std::string> cols = result.fields;
   std::list<std::string> collist(cols.begin(), cols.end());
   collist.pop_front();
