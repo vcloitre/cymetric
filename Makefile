@@ -15,8 +15,11 @@ includes += $(shell export PKG_CONFIG_PATH="$(HOME)/.local/lib/pkgconfig"; pkg-c
 libs += -L$(CYCLUS_ROOT)/lib
 libs += -lcyclus -lhdf5 -lboost_system
 
-cymetric: main.cc
+cymetric: main.cc 
 	g++ -g main.cc $(includes) $(libs) -std=c++11 -o cymetric
+
+massvector: massvector.cc
+	g++ -g massvector.cc $(includes) $(libs) -std=c++11 -o massvector
 
 clean: 
 	rm -f cymetric
