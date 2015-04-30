@@ -247,6 +247,59 @@ def test_fco_electricity_gen():
     obs = metrics.fco_electricity_gen.func(series)
     assert_frame_equal(exp, obs)
 
+def test_capital_cost():
+    exp = pd.DataFrame(np.array([
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), -8, 13, 0),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), -7, 13, 343.75),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), -6, 13, 687.5),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), -5, 13, 1031.25),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), -4, 13, 1375.0),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), -3, 13, 1718.75),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), -2, 13, 2062.5),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), -1, 13, 2406.25),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 0, 13, 2750.0),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 1, 13, 1375.0),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 2, 13, 0),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 9, 20, 0),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 10, 20, 750.0),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 11, 20, 1500.0),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 12, 20, 2250.0),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 20, 3000.0),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 14, 20, 3750.0),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 15, 20, 4500.0),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 16, 20, 5250.0),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 17, 20, 6000.0),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 18, 20, 3000.0),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 19, 20, 0)
+        ], dtype=ensure_dt_bytes([
+             ('SimId','O'), ('Time','<i8'), ('AgentId', '<i8'),
+             ('CashFlow', '<f8')]))
+        )
+    power = pd.DataFrame(np.array([
+          (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 20, 12, 3),
+          (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 20, 12, 4),
+          (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 20, 12, 5),
+          (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 5.5, 210),
+          (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 5.5, 211),
+          (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 5.5, 212),
+          (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 5.5, 213)
+          ], dtype=ensure_dt_bytes([
+                  ('SimId', 'O'), ('AgentId', '<i8'), ('Value', '<f8'),
+                  ('Time', '<i8')]))
+          )
+    entry = pd.DataFrame(np.array([
+          (13, ':cycamore:Reactor', 210),
+          (20, ':cycamore:Reactor', 3),
+          (4, ':cycamore:Sink', 1)
+          ], dtype=ensuire_dt_bytes([('AgentId', '<i8'), ('Spec', 'O'),
+                  ('EnterTime', '<i8')]))
+          )
+    s1 = power.set_index(['SimId', 'AgentId', 'Value'])['Time']
+    s2 = entry.set_index(['AgentId', 'Spec'])['EnterTime']
+    series = [s1, s2]
+    obs = metrics.capital_cost(series)
+    assert_frame_equal(exp, obs)
+
 
 if __name__ == "__main__":
     nose.runmodule()
