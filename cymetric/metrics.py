@@ -359,7 +359,7 @@ def capital_cost(series):
 del _ccdeps, _ccschema
 
 
-_fcdeps = [('Resources', ('SimId', 'ResourceId'), 'Quantity'), ('Transactions', ('TransactionId', 'ReceiverId', 'ResourceId', 'Commodity'), 'Time')]
+_fcdeps = [('Resources', ('ResourceId'), 'Quantity'), ('Transactions', ('SimId', 'TransactionId', 'ReceiverId', 'ResourceId', 'Commodity'), 'Time')]
 
 _fcschema = [('SimId', ts.UUID), ('TransactionId', ts.INT),
              ('ReceiverId', ts.INT), ('Commodity', ts.STRING), ('Cost', ts.DOUBLE), ('Time', ts.INT)]
@@ -372,7 +372,7 @@ def fuel_cost(series):
     f_resources = series[0].reset_index().set_index(['ResourceId'])
     f_transactions = series[1].reset_index().set_index(['ResourceId'])
     f_transactions['Quantity'] = f_resources.Quantity
-    f_transactions['Cost'] = f_transactions[f_transactions['Commodity']=='uox'].Quantity*fuel_price
+    f_transactions['Cost'] = f_transactions.Quantity*fuel_price*(f_transactions['Commodity']=='uox')
     del f_transactions['Quantity']
     rtn = f_transactions.reset_index()
     cols = rtn.columns.tolist()
