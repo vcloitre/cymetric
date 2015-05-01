@@ -307,7 +307,7 @@ def test_fuel_cost():
         (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 34, 1, 'uox', 29641.600000000002, 46)
         ], dtype=ensure_dt_bytes([
              ('SimId','O'), ('TransactionId', '<i8'), ('ReceiverId','<i8'),
-             ('Commodity', 'O'), ('Cost', '<f8'), ('Time', 'i<8')]))
+             ('Commodity', 'O'), ('Cost', '<f8'), ('Time', '<i8')]))
         )
     resources = pd.DataFrame(np.array([
               (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 27, 12.56),
@@ -320,9 +320,9 @@ def test_fuel_cost():
                  (34, 1, 27, 'uox', 46),
                  (11, 3, 13, 'mox', 9)
                  ], dtype=ensure_dt_bytes([
-                         ('TransactionId', 'i<8'), ('ReceiverId', 'i<8'),
-                         ('ResourceId', 'i<8'), ('Commodity', 'O'),
-                         ('Time', 'i<8')]))
+                         ('TransactionId', '<i8'), ('ReceiverId', '<i8'),
+                         ('ResourceId', '<i8'), ('Commodity', 'O'),
+                         ('Time', '<i8')]))
                  )
     s1 = resources.set_index(['SimId', 'ResourceId'])['Quantity']
     s2 = transactions.set_index(['TransactionId', 'ReceiverId', 'ResourceId', 'Commodity'])['Time']
