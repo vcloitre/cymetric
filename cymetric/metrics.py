@@ -369,13 +369,13 @@ def fuel_cost(series):
     """fuel_cost returns the cash flows related to the fuel costs for power plants.
     """
     fuel_price = 2360 # $/kg, see http://www.world-nuclear.org/info/Economic-Aspects/Economics-of-Nuclear-Power/
-    f_resources = series[0].reset_index()
-    f_transactions = series[1].reset_index()
+    f_resources = series[0].reset_index().set_index(['ResourceId'])
+    f_transactions = series[1].reset_index().set_index(['ResourceId'])
     f_transactions['Quantity'] = f_resources.Quantity
     f_transactions['Cost'] = f_transactions[f_transactions['Commodity']=='uox'].Quantity*fuel_price
     del f_transactions['Quantity']
     rtn = f_transactions.reset_index()
-    cols = f_transactions.columns.tolist()
+    cols = rtn.columns.tolist()
     cols = cols[1:5]+cols[6:]+cols[5:6]
     rtn = rtn[cols]
     return rtn
