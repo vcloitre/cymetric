@@ -321,7 +321,7 @@ def fco_fuel_loading(series):
 
 del _fldeps, _flschema
 
-#####economic metrics#####
+#####economic metrics for nuclear power plants#####
 
 _ccdeps = [('TimeSeriesPower', ('SimId', 'AgentId', 'Value'), 'Time'), ('AgentEntry', ('AgentId', 'Spec'), 'EnterTime')]
 
@@ -357,3 +357,27 @@ def capital_cost(series):
     return rtn
 
 del _ccdeps, _ccschema
+
+
+_fcdeps = [('Resources', ('SimId', 'ResourceId'), 'Quantity'), ('Transactions', ('TransactionId', 'ReceiverId', 'ResourceId', 'Commodity'), 'Time')]
+
+_fcschema = [('SimId', ts.UUID), ('TransactionId', ts.INT),
+             ('ReceiverId', ts.INT), ('Commodity', ts.STRING), ('Cost', ts.DOUBLE), ('Time', ts.INT)]
+
+@metric(name='FuelCost', depends=_pcdeps, schema=_pcschema)
+def fuel_cost(series):
+    """fuel_cost returns the cash flows related to the fuel costs for power plants.
+    """
+    fuel_price = 2360 # $/kg, see http://www.world-nuclear.org/info/Economic-Aspects/Economics-of-Nuclear-Power/
+    f_resources = series[0].reset_index()
+    f_transactions = series[1].reset_index()
+    f_transactions['Quantity'] = f_resources.Quantity
+    f_transactions['Cost'] = f_transactions[f_transactions['Commodity']=='uox'].Quantity*fuel_price
+    del f_transactions['Quantity'], f_transactions['SenderId']
+    rtn = f_transactions.reset_index()
+    cols = f_transactions.columns.tolist()
+    cols = cols[1:5]+cols[6:]+cols[5:6]
+    rtn = rtn[cols]
+    return rtn
+
+del _fcdeps, _fcschema
