@@ -321,7 +321,7 @@ def test_fuel_cost():
                  (11, 3, 13, 'mox', 9)
                  ], dtype=ensure_dt_bytes([
                          ('TransactionId', 'i<8'), ('ReceiverId', 'i<8'),
-                         ('ResourceId, 'i<8'), ('Commodity', 'O'),
+                         ('ResourceId', 'i<8'), ('Commodity', 'O'),
                          ('Time', 'i<8')]))
                  )
     s1 = resources.set_index(['SimId', 'ResourceId'])['Quantity']
