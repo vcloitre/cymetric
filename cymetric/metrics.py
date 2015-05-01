@@ -373,7 +373,7 @@ def fuel_cost(series):
     f_transactions = series[1].reset_index()
     f_transactions['Quantity'] = f_resources.Quantity
     f_transactions['Cost'] = f_transactions[f_transactions['Commodity']=='uox'].Quantity*fuel_price
-    del f_transactions['Quantity'], f_transactions['SenderId']
+    del f_transactions['Quantity']
     rtn = f_transactions.reset_index()
     cols = f_transactions.columns.tolist()
     cols = cols[1:5]+cols[6:]+cols[5:6]
