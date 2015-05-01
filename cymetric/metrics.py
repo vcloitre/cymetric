@@ -349,10 +349,10 @@ def capital_cost(series):
         df['Capacity'][i]=f_power[f_power.AgentId==i][f_power.Time==df.EnterTime[i]].Value.iloc[0]
         s_cost=pd.Series(list(range(pay_beg+pay_end+1)))
         s_cost=s_cost.apply(lambda x: overnight*df.Capacity[i]/((pay_beg+pay_end)*pay_beg)*x*(x<=8)-overnight*df.Capacity[i]/((pay_beg+pay_end)*pay_end)*(x-pay_beg-pay_end)*(x>8))
-        rtn= pd.concat([rtn,pd.DataFrame({'Time': list(range(pay_beg+pay_end+1))+df.EnterTime[i]//12-pay_beg, 'AgentId': i, 'CashFlow': s_cost})], ignore_index=True)
+        rtn= pd.concat([rtn,pd.DataFrame({'AgentId': i, 'Time': list(range(pay_beg+pay_end+1))+df.EnterTime[i]//12-pay_beg, 'CashFlow': s_cost})], ignore_index=True)
     rtn['SimId']=f_power.SimId.iloc[0]
     cols = rtn.columns.tolist()
-    cols = cols[-1:] + cols[:-1]
+    cols=cols[3:]+cols[:1]+cols[2:3]+cols[1:2]
     rtn = rtn[cols]
     return rtn
 
