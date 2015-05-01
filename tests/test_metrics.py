@@ -291,13 +291,13 @@ def test_capital_cost():
           (13, ':cycamore:Reactor', 210),
           (20, ':cycamore:Reactor', 3),
           (4, ':cycamore:Sink', 1)
-          ], dtype=ensuire_dt_bytes([('AgentId', '<i8'), ('Spec', 'O'),
+          ], dtype=ensure_dt_bytes([('AgentId', '<i8'), ('Spec', 'O'),
                   ('EnterTime', '<i8')]))
           )
     s1 = power.set_index(['SimId', 'AgentId', 'Value'])['Time']
     s2 = entry.set_index(['AgentId', 'Spec'])['EnterTime']
     series = [s1, s2]
-    obs = metrics.capital_cost(series)
+    obs = metrics.capital_cost.func(series)
     assert_frame_equal(exp, obs)
 
 

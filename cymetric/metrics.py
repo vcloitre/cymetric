@@ -329,7 +329,7 @@ _ccschema = [('SimId', ts.UUID), ('AgentId', ts.INT),
              ('Time', ts.INT), ('CashFlow', ts.DOUBLE)]
 
 @metric(name='CapitalCost', depends=_ccdeps, schema=_ccschema)
-def cap_cost(series):
+def capital_cost(series):
     """cap_cost returns the cash flows per YEAR related to the capital costs of a reactor.
     overnight cost comes from WEO 2014 (cost in the US). The timeframe for the payment of
     the capital costs is drawn from of a graph from EDF. Next steps could be make the price
@@ -342,7 +342,6 @@ def cap_cost(series):
     f_entry=series[1].reset_index()
     id_reactors=f_entry[f_entry.Spec==":cycamore:Reactor"]["AgentId"].values
     df=pd.DataFrame([f_entry[f_entry.Spec==':cycamore:Reactor'].EnterTime,f_entry[f_entry.Spec==':cycamore:Reactor'].AgentId]).transpose()
-    f_power[f_power.AgentId==15][f_power.Time==50].Value.iloc[0]
     df=df.set_index(['AgentId'])
     df['Capacity']=pd.Series()
     rtn=pd.DataFrame()
@@ -351,8 +350,6 @@ def cap_cost(series):
         s_cost=pd.Series(list(range(pay_beg+pay_end+1)))
         s_cost=s_cost.apply(lambda x: overnight*df.Capacity[i]/((pay_beg+pay_end)*pay_beg)*x*(x<=8)-overnight*df.Capacity[i]/((pay_beg+pay_end)*pay_end)*(x-pay_beg-pay_end)*(x>8))
         rtn= pd.concat([rtn,pd.DataFrame({'Time': list(range(pay_beg+pay_end+1))+df.EnterTime[i]//12-pay_beg, 'AgentId': i, 'CashFlow': s_cost})], ignore_index=True)
-    cols = rtn.columns.tolist()
-    cols = cols[-1:] + cols[:-1]
     rtn['SimId']=f_power.SimId.iloc[0]
     cols = rtn.columns.tolist()
     cols = cols[-1:] + cols[:-1]
