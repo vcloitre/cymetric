@@ -364,7 +364,7 @@ _fcdeps = [('Resources', ('SimId', 'ResourceId'), 'Quantity'), ('Transactions', 
 _fcschema = [('SimId', ts.UUID), ('TransactionId', ts.INT),
              ('ReceiverId', ts.INT), ('Commodity', ts.STRING), ('Cost', ts.DOUBLE), ('Time', ts.INT)]
 
-@metric(name='FuelCost', depends=_pcdeps, schema=_pcschema)
+@metric(name='FuelCost', depends=_fcdeps, schema=_fcschema)
 def fuel_cost(series):
     """fuel_cost returns the cash flows related to the fuel costs for power plants.
     """
