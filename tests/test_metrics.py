@@ -310,22 +310,20 @@ def test_fuel_cost():
              ('Commodity', 'O'), ('Cost', '<f8'), ('Time', '<i8')]))
         )
     resources = pd.DataFrame(np.array([
-              (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 27, 12.56),
-              (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 5.5),
+              (27, 12.56),
+              (13, 5.5),
               ], dtype=ensure_dt_bytes([
-                      ('SimId', 'O'), ('ResourceId', '<i8'), ('Quantity', '<f8'),
-                      ]))
+                      ('ResourceId', '<i8'), ('Quantity', '<f8'),]))
               )
     transactions = pd.DataFrame(np.array([
-                 (34, 1, 27, 'uox', 46),
-                 (11, 3, 13, 'mox', 9)
+                 (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 34, 1, 27, 'uox', 46),
+                 (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 11, 3, 13, 'mox', 9)
                  ], dtype=ensure_dt_bytes([
-                         ('TransactionId', '<i8'), ('ReceiverId', '<i8'),
-                         ('ResourceId', '<i8'), ('Commodity', 'O'),
-                         ('Time', '<i8')]))
+                         ('SimId', 'O'), ('TransactionId', '<i8'), ('ReceiverId', '<i8'),
+                         ('ResourceId', '<i8'), ('Commodity', 'O'), ('Time', '<i8')]))
                  )
-    s1 = resources.set_index(['SimId', 'ResourceId'])['Quantity']
-    s2 = transactions.set_index(['TransactionId', 'ReceiverId', 'ResourceId', 'Commodity'])['Time']
+    s1 = resources.set_index(['ResourceId'])['Quantity']
+    s2 = transactions.set_index(['SimId', 'TransactionId', 'ReceiverId', 'ResourceId', 'Commodity'])['Time']
     series = [s1, s2]
     obs = metrics.fuel_cost.func(series)
     assert_frame_equal(exp, obs)
