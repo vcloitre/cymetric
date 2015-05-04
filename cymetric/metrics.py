@@ -359,7 +359,7 @@ def capital_cost(series):
 del _ccdeps, _ccschema
 
 
-_fcdeps = [('Resources', ('ResourceId'), 'Quantity'), ('Transactions', ('SimId', 'TransactionId', 'ReceiverId', 'ResourceId', 'Commodity'), 'Time')]
+_fcdeps = [('Resources', ('SimId', 'ResourceId'), 'Quantity'), ('Transactions', ('SimId', 'TransactionId', 'ReceiverId', 'ResourceId', 'Commodity'), 'Time')]
 
 _fcschema = [('SimId', ts.UUID), ('TransactionId', ts.INT),
              ('ReceiverId', ts.INT), ('Commodity', ts.STRING), ('Cost', ts.DOUBLE), ('Time', ts.INT)]
