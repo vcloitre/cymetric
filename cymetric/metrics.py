@@ -371,8 +371,8 @@ def fuel_cost(series):
     fuel_price = 2360 # $/kg, see http://www.world-nuclear.org/info/Economic-Aspects/Economics-of-Nuclear-Power/
     f_resources = series[0].reset_index().set_index(['ResourceId'])
     f_transactions = series[1].reset_index().set_index(['ResourceId'])
-    f_transactions['Quantity'] = f_resources.Quantity
-    f_transactions['Cost'] = f_transactions.Quantity*fuel_price*(f_transactions['Commodity']=='uox')
+    f_transactions['Quantity'] = f_resources['Quantity']
+    f_transactions['Cost'] = f_transactions['Quantity']*fuel_price*(f_transactions['Commodity']=='uox')
     del f_transactions['Quantity']
     rtn = f_transactions.reset_index()
     cols = rtn.columns.tolist()
@@ -381,3 +381,4 @@ def fuel_cost(series):
     return rtn
 
 del _fcdeps, _fcschema
+
