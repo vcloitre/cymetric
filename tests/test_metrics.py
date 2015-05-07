@@ -330,5 +330,54 @@ def test_fuel_cost():
     assert_frame_equal(exp, obs)
 
 
+def test_decommissioning_cost():
+    exp = pd.DataFrame(np.array([
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 0, 19)
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/14/7, 20)
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/49, 21)
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/14*3/7, 22)
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/14*4/7, 23)
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/14*5/7, 24)
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/14*6/7, 25)
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/14, 26)
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/14*6/7, 27)
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/14*5/7, 28)
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/14*4/7, 29)
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/14*3/7, 30)
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/49, 31)
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/14/7, 32)
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 0, 33)
+        ], dtype=ensure_dt_bytes([
+             ('SimId','O'), ('AgentId', '<i8'), ('DecomPayment','<f8'),
+             ('Time', '<i8')]))
+        )
+    decom = pd.DataFrame(np.array([
+              (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 234),
+              (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 5, 450)
+              ], dtype=ensure_dt_bytes([
+                      ('SimId', 'O'), ('AgentId', '<i8'), ('DecomTime', '<i8'),]))
+              )
+    power = pd.DataFrame(np.array([
+                 (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 10.0),
+                 (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 27, 11.3)
+                 ], dtype=ensure_dt_bytes([
+                         ('SimId', 'O'), ('AgentId', '<i8'), ('Value', '<f8')]))
+                 )
+    entry = pd.DataFrame(np.array([
+                 (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 27, ':cycamore:Reactor'),
+                 (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, ':cycamore:Reactor'),
+                 (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 5, ':cycamore:Sink')
+                 ], dtype=ensure_dt_bytes([
+                         ('SimId', 'O'), ('AgentId', '<i8'),
+                         ('Spec', 'O')]))
+                 )
+    s1 = decom.set_index(['SimId', 'AgentId'])['DecomTime']
+    s2 = power.set_index(['SimId', 'AgentId'])['Value']
+    s3 = entry.set_index(['SimId', 'AgentId'])['Spec']
+    series = [s1, s2, s3]
+    obs = metrics.decommissioning_cost.func(series)
+    assert_frame_equal(exp, obs)
+
+
 if __name__ == "__main__":
     nose.runmodule()

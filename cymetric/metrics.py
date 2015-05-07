@@ -382,3 +382,34 @@ def fuel_cost(series):
 
 del _fcdeps, _fcschema
 
+
+_dcdeps = [('DecomSchedule', ('SimId', 'AgentId'), 'DecomTime'), ('TimeSeriesPower', ('SimId', 'AgentId'), 'Value')
+          ('AgentEntry', ('SimId', 'AgentId'), 'Spec')]
+
+_dcschema = [('SimId', ts.UUID), ('AgentId', ts.INT), ('DecomPayment', ts.DOUBLE), ('Time', ts.INT)]
+
+@metric(name='DecommissioningCost', depends=_dcdeps, schema=_dcschema)
+def decommissioning_cost(series):
+"""
+"""
+    cost = 750 # decommission cost in $/kW d'Haeseler
+    duration = 15 # decommission last about 15 yrs
+    f_decom = series[0].reset_index().set_index('AgentId')
+    f_power = series[1].reset_index()
+    ff_entry = series[2].reset_index()
+    id_reactors = f_entry[f_entry.Spec==":cycamore:Reactor"]["AgentId"].values
+    id_decom = f_decom.index.tolist()
+    id_decom_reac = [val for val in id_reactors if val in id_decom]
+    rtn = pd.DataFrame()
+    for i in id_decom_reac:
+        s_cost=pd.Series(list(range(duration)))
+        s_cost=s_cost.apply(lambda x: 4*cost*f_power[f_power['AgentId']==i]['Value'].iloc[0]/((duration-1)**2)*x*(x<=duration/2)-4*cost*f_power[f_power['AgentId']==i]['Value'].iloc[0]/((duration-1)**2)*(x-duration+1)*(x>duration/2))
+        rtn = pd.concat([rtn,pd.DataFrame({'AgentId': i, 'Time': list(range(duration))+f_decom.DecomTime[i]//12, 'DecomCost': s_cost})], ignore_index=True)
+    rtn['SimId'] = f_decom['SimId'].iloc[0]
+    cols = rtn.columns.tolist()
+    cols = cols[-1:]+cols[:-1]
+    rtn = rtn[cols]
+    return rtn
+    
+
+del _dcdeps, _dcschema
