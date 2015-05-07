@@ -404,7 +404,7 @@ def decommissioning_cost(series):
     for i in id_decom_reac:
         s_cost=pd.Series(list(range(duration)))
         s_cost=s_cost.apply(lambda x: 4*cost*f_power[f_power['AgentId']==i]['Value'].iloc[0]/((duration-1)**2)*x*(x<=duration/2)-4*cost*f_power[f_power['AgentId']==i]['Value'].iloc[0]/((duration-1)**2)*(x-duration+1)*(x>duration/2))
-        rtn = pd.concat([rtn,pd.DataFrame({'AgentId': i, 'Time': list(range(duration))+f_decom.DecomTime[i]//12, 'DecomCost': s_cost})], ignore_index=True)
+        rtn = pd.concat([rtn,pd.DataFrame({'AgentId': i, 'Time': list(range(duration))+f_decom.DecomTime[i]//12, 'DecomPayment': s_cost})], ignore_index=True)
     rtn['SimId'] = f_decom['SimId'].iloc[0]
     cols = rtn.columns.tolist()
     cols = cols[-1:]+cols[:-1]
