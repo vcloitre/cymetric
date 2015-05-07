@@ -383,7 +383,7 @@ def fuel_cost(series):
 del _fcdeps, _fcschema
 
 
-_dcdeps = [('DecomSchedule', ('SimId', 'AgentId'), 'DecomTime'), ('TimeSeriesPower', ('SimId', 'AgentId'), 'Value')
+_dcdeps = [('DecomSchedule', ('SimId', 'AgentId'), 'DecomTime'), ('TimeSeriesPower', ('SimId', 'AgentId'), 'Value'),
           ('AgentEntry', ('SimId', 'AgentId'), 'Spec')]
 
 _dcschema = [('SimId', ts.UUID), ('AgentId', ts.INT), ('DecomPayment', ts.DOUBLE), ('Time', ts.INT)]
