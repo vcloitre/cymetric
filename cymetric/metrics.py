@@ -427,7 +427,7 @@ def operation_maintenance(series):
     rtn.Time=rtn.Time//12
     rtn =  rtn.drop_duplicates(cols=['AgentId', 'Time'], take_last=True)
     rtn['O&MPayment'] = rtn['Value']*cost
-    f_power=f_power.reset_index()
+    rtn = rtn.reset_index()
     del rtn['Value'], rtn['index']
     return rtn
 
