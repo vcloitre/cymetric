@@ -383,7 +383,7 @@ def test_operation_maintenance():
     exp = pd.DataFrame(np.array([
         (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 0, 232.3),
         (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 2, 232.3),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 8, 400)
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 5, 8, 400)
         ], dtype=ensure_dt_bytes([
              ('SimId','O'), ('AgentId', '<i8'), ('Time', '<i8'),
              ('O&MPayment','<f8')]))
