@@ -396,7 +396,7 @@ def decommissioning_cost(series):
     duration = 15 # decommission last about 15 yrs
     f_decom = series[0].reset_index().set_index('AgentId')
     f_power = series[1].reset_index()
-    ff_entry = series[2].reset_index()
+    f_entry = series[2].reset_index()
     id_reactors = f_entry[f_entry.Spec==":cycamore:Reactor"]["AgentId"].values
     id_decom = f_decom.index.tolist()
     id_decom_reac = [val for val in id_reactors if val in id_decom]
