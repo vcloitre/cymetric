@@ -423,7 +423,7 @@ def operation_maintenance(series):
     """O&M
     """
     cost = 100 # $/kW/an
-    rtn = series[0].reset_index().set_index('AgentId')
+    rtn = series[0].reset_index()
     rtn.Time=rtn.Time//12
     rtn =  rtn.drop_duplicates(cols=['AgentId', 'Time'], take_last=True)
     rtn['O&MPayment'] = rtn['Value']*cost
