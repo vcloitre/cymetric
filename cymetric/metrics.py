@@ -390,8 +390,8 @@ _dcschema = [('SimId', ts.UUID), ('AgentId', ts.INT), ('DecomPayment', ts.DOUBLE
 
 @metric(name='DecommissioningCost', depends=_dcdeps, schema=_dcschema)
 def decommissioning_cost(series):
-"""
-"""
+    """decom
+    """
     cost = 750 # decommission cost in $/kW d'Haeseler
     duration = 15 # decommission last about 15 yrs
     f_decom = series[0].reset_index().set_index('AgentId')
