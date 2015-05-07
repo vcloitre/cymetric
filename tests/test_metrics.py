@@ -379,5 +379,29 @@ def test_decommissioning_cost():
     assert_frame_equal(exp, obs)
 
 
+def test_operation_maintenance():
+    exp = pd.DataFrame(np.array([
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 0, 232.3),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 2, 232.3),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 8, 400)
+        ], dtype=ensure_dt_bytes([
+             ('SimId','O'), ('AgentId', '<i8'), ('Time', '<i8'),
+             ('O&MPayment','<f8')]))
+        )
+    power = pd.DataFrame(np.array([
+              (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 2, 2.323),
+              (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 3, 2.323),
+              (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 32, 2.323),
+              (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 5, 100, 4)
+              ], dtype=ensure_dt_bytes([
+                      ('SimId', 'O'), ('AgentId', '<i8'), ('Time', '<i8'),
+                      ('Value', '<f8')]))
+              )
+    s1 = power.set_index(['SimId', 'AgentId', 'Time'])['Value']
+    series = [s1]
+    obs = metrics.operation_maintenance.func(series)
+    assert_frame_equal(exp, obs)
+
+
 if __name__ == "__main__":
     nose.runmodule()

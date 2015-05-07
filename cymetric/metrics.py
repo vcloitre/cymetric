@@ -409,7 +409,25 @@ def decommissioning_cost(series):
     cols = rtn.columns.tolist()
     cols = cols[-1:]+cols[:-1]
     rtn = rtn[cols]
-    return rtn
-    
+    return rtn    
 
 del _dcdeps, _dcschema
+
+
+_omdeps = [('TimeSeriesPower', ('SimId', 'AgentId', 'Time'), 'Value')]
+
+_omschema = [('SimId', ts.UUID), ('AgentId', ts.INT), ('Time', ts.INT), ('O&MPayment', ts.DOUBLE)]
+
+@metric(name='OperationMaintenance', depends=_omdeps, schema=_omschema)
+def operation_maintenance(series):
+    """O&M
+    """
+    cost = 100 # $/kW/an
+    rtn = series[0].reset_index().set_index('AgentId')
+    rtn.Time=rtn.Time//12
+    rtn =  rtn.drop_duplicates(cols=['AgentId', 'Time'], take_last=True)
+    rtn['O&MPayment'] = rtn['Value']*cost
+    del rtn['Value']
+    return rtn
+
+del _omdeps, _omschema
