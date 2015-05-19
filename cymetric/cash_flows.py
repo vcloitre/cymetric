@@ -14,12 +14,28 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from lcoe import s_lcoe, w_lcoe, average_cost, annual_cost
 
-def lcoe(output_db):
+############
+# Reactors #
+############
+
+def lcoe_plot(output_db, reactor_id):
     """Levelized cost of electricity that we get with one reactor technology (given a fuel cycle technology)/the whole fuel cycle we built for the simulation
     """
+    pd.Series(lifetime*[lcoe(output_db, reactor_id)]).plot()
+    plt.show()
 
+def annual_cost_plot(output_db, reactor_id):
+    pd.Series(annual_cost(output_db, reactor_id)).plot()
+    plt.show()
 
+def average_cost_plot(output_db, reactor_id):
+    pd.Series(lifetime*[average_cost(output_db, reactor_id)]).plot()
+    plt.show()
+
+    
+####
 def agents_cash(output_db, agent_id):
     """For a given agent, plot the cash_flows (positive values = income, negative values = expenditure)
     Could be a region, institution or facility.

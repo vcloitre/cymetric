@@ -3,11 +3,15 @@
 # different policies, that we could choose. That is the purpose of seperating the paramters #
 # depending on the level (region, institution, facility). It will be possible to select     #
 # one (or even several ?) options.							    #
+# 											    #
+# Need to add specific inflation rates 							    #
 #############################################################################################
 
 ########################
 # Financial Parameters #
 ########################
+
+# see d'Haeseleer (2013 data)
 
 # Region level
 tax_rate = # %
@@ -35,14 +39,14 @@ decommissioning_time = # years
 # see d'Haeseleer (2013 data)
 
 # mining
-u_ore_price =
+u_ore_price = 
 # processing
-yellow_cake_price =
-# conversion
-UF6_cost =
+yellow_cake_price = 130 # $/kg
+# conversion from U308 to UF6
+conversion_cost = 9 # $/kg
 # enrichment
-swu_cost =
-enr_UF6_cost =
+swu_cost = 140 # $/swu
+# Example : for 4.95 % enrichment, fuel cost 300 $/kg
 # fabrication
 ## reconversion
 UO2_cost =
@@ -50,11 +54,10 @@ UO2_cost =
 Pu_price =
 reprocessed_ur =
 fuel_price = {} # dict with prices for different reactors (pwr, phwr, bwr, fr... differentiate reenriched uox with uox using natural uranium)
-# disposal
-disposal_price =
+# a function could give the price of uranium as a function of availability (see Arnaud's work)
+# "The back-end cost elements include the interim storage facilities, construction of reprocessing facilities, SNF encapsulation and final disposal" (d'Haeseleer)
+
 
 #####################
 # Power plant costs #
 #####################
-
-
