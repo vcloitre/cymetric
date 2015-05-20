@@ -7,8 +7,6 @@ import inspect
 import numpy as np
 import pandas as pd
 
-from eco_inputs import overnight
-
 
 try:
     from cymetric.metrics import metric
@@ -17,6 +15,7 @@ try:
     from cymetric import typesystem as ts
     from cymetric import tools
     from cymetric.evaluator import register_metric
+    from cymetric.eco_inputs import overnight
 except ImportError:
     # some wacky CI paths prevent absolute importing, try relative
     from .metrics import metric
@@ -25,6 +24,7 @@ except ImportError:
     from . import typesystem as ts
     from . import tools
     from .evaluator import register_metric
+    from .eco_inputs import overnight
 
 
 ## The actual metrics ##
