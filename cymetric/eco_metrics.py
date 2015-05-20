@@ -58,7 +58,7 @@ def capital_cost(series):
     for i in id_reactors:
         f_entry['Capacity'][i] = f_power[f_power.AgentId == i][f_power.Time ==
                                f_entry.EnterTime[i]].Value.iloc[0]
-        s_cost2 = s_cost * overnight * f_entry['Capacity'][i]
+        s_cost2 = np.around(s_cost * overnight * f_entry['Capacity'][i], 3)
         rtn = pd.concat([rtn,pd.DataFrame({'AgentId': i, 'Time': pd.Series(list(range(payment_duration + 1)))-payment_begin+f_entry.EnterTime[i]//12, 'CashFlow' : s_cost2})], ignore_index=True)
     rtn['SimId']=f_power.SimId.iloc[0]
     cols = rtn.columns.tolist()
