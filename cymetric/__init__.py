@@ -13,6 +13,7 @@ try:
     from cymetric.evaluator import METRIC_REGISTRY, register_metric, \
         raw_to_series, Evaluator, eval
     from cymetric.execution import ExecutionContext, exec_code
+    from cymetric.eco_inputs import overnight
 except ImportError:
     # again with the wacky CI issues
     from .cyclus import Datum, FullBackend, SqliteBack, Hdf5Back, \
@@ -26,3 +27,4 @@ except ImportError:
     from .evaluator import METRIC_REGISTRY, register_metric, \
         raw_to_series, Evaluator, eval
     from .execution import ExecutionContext, exec_code
+    from .eco_inputs import overnight
