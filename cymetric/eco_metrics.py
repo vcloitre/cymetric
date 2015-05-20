@@ -15,7 +15,7 @@ try:
     from cymetric import typesystem as ts
     from cymetric import tools
     from cymetric.evaluator import register_metric
-    from cymetric.eco_inputs import overnight
+    from cymetric.eco_inputs import overnight, capital_shape
 except ImportError:
     # some wacky CI paths prevent absolute importing, try relative
     from .metrics import metric
