@@ -124,7 +124,7 @@ def decommissioning_cost(series):
         s_cost = s_cost.apply(lambda x: 4*cost*f_power[f_power['AgentId']==i][
                'Value'].iloc[0]/((duration-1)**2)*x*(x<=duration/2)-4*cost*
                f_power[f_power['AgentId']==i]['Value'].iloc[0]/((duration-
-               1)**2)*(x-dur) # end missing
+               1)**2)*(x-dur)) # end missing
         rtn = pd.concat([rtn,pd.DataFrame({'AgentId': i, 'Time': list(range(
             duration))+f_decom.DecomTime[i]//12, 'DecomPayment': s_cost})], 
             ignore_index=True)
