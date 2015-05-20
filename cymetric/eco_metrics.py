@@ -24,7 +24,7 @@ except ImportError:
     from . import typesystem as ts
     from . import tools
     from .evaluator import register_metric
-    from .eco_inputs import overnight
+    from .eco_inputs import overnight, capital_shape
 
 
 ## The actual metrics ##
