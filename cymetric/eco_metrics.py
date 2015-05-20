@@ -59,7 +59,7 @@ def capital_cost(series):
         f_entry['Capacity'][i] = f_power[f_power.AgentId == i][f_power.Time ==
                                f_entry.EnterTime[i]].Value.iloc[0]
         s_cost2 = s_cost * overnight * f_entry['Capacity'][i]
-        rtn = pd.concat([rtn,pd.DataFrame({'AgentId': i, 'Time': pd.Series(list(range(payment_duration)))-payment_begin+f_entry.EnterTime[i]//12, 'CashFlow' : s_cost2})], ignore_index=True)
+        rtn = pd.concat([rtn,pd.DataFrame({'AgentId': i, 'Time': pd.Series(list(range(payment_duration + 1)))-payment_begin+f_entry.EnterTime[i]//12, 'CashFlow' : s_cost2})], ignore_index=True)
     rtn['SimId']=f_power.SimId.iloc[0]
     cols = rtn.columns.tolist()
     cols=cols[3:]+cols[:1]+cols[2:3]+cols[1:2]

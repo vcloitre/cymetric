@@ -89,7 +89,7 @@ def capital_shape(t0, duration, shape):
         raise Exception("Duration of paiement must be positive")            
     if "LINEAR" in shape.upper():
         step1 = pd.Series(list(range(t0))).apply(lambda x: 2/(t0*duration)*x)
-        step2 = pd.Series(list(range(duration-t0))).apply(lambda x: -2/((
+        step2 = pd.Series(list(range(duration-t0+1))).apply(lambda x: -2/((
               duration-t0)*duration)*x+2/duration)
         return pd.concat([step1, step2]).reset_index()[0]      
     #else if shape == :   
