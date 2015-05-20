@@ -92,7 +92,6 @@ def capital_shape(t0, duration, shape):
         step2 = pd.Series(list(range(duration-t0))).apply(lambda x: -2/((
               duration-t0)*duration)*x+2/duration)
         return pd.concat([step1, step2]).reset_index()[0]      
-    else if shape == :
-        
+    #else if shape == :   
     else:
         raise Exception("Wrong shape, valid shapes are in the following list : " + str(shapes))
