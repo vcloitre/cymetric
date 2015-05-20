@@ -44,8 +44,8 @@ def capital_cost(series):
     technology and make the payment more realistic, ie include interest rates, 
     improve the linear model and finally be able to fetch data"""
     model_choice = input("How do you want to model the capital costs (linear, or random) ? ")
-    payment_begin = input("How many years before commissioning should the payment begin ? (give an integer or write \"random\") ")
-    payment_duration = input("How many years do you want the payment to last ? (give an integer or write \"random)\" ")
+    payment_begin = int(input("How many years before commissioning should the payment begin ? (give an integer or write \"random\") "))
+    payment_duration = int(input("How many years do you want the payment to last ? (give an integer or write \"random)\" "))
     s_cost = capital_shape(payment_begin, payment_duration, model_choice)
     f_power = series[0].reset_index()
     f_entry = series[1].reset_index()
