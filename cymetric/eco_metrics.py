@@ -137,7 +137,7 @@ def decommissioning_cost(series):
 del _dcdeps, _dcschema
 
 
-c_omdeps = [('TimeSeriesPower', ('SimId', 'AgentId', 'Time'), 'Value')]
+_omdeps = [('TimeSeriesPower', ('SimId', 'AgentId', 'Time'), 'Value')]
 
 _omschema = [('SimId', ts.UUID), ('AgentId', ts.INT), ('Time', ts.INT), 
           ('O&MPayment', ts.DOUBLE)]
