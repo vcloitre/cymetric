@@ -13,7 +13,7 @@ import pandas as pd
 ########################
 
 # see d'Haeseleer (2013 data)
-
+"""
 # Region level
 tax_rate = # %
 depreciation_schedule = # depreciation type
@@ -26,9 +26,10 @@ delta_BC = # $/MWh increment of the BC in the loop
 # Institution level
 fixedOM = # $/MWh-yr
 variableOM = # $/MWh
-
+"""
 # Facility level
 overnight = 5000 # $/MW cap or maybe overnight cap cost
+"""
 construction_time = # years
 decommissioning_cost = # $/MW
 decommissioning_time = # years
@@ -62,7 +63,7 @@ fuel_price = {}
 # "The back-end cost elements include the interim storage facilities, 
 # construction of reprocessing facilities, SNF encapsulation and final 
 # disposal" (d'Haeseleer)
-
+"""
 
 #####################
 # Power plant costs #
