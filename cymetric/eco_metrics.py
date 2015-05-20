@@ -11,6 +11,7 @@ from eco_inputs import overnight
 
 
 try:
+    from cymetric.metrics import metric
     from cymetric import cyclus
     from cymetric import schemas
     from cymetric import typesystem as ts
@@ -18,13 +19,13 @@ try:
     from cymetric.evaluator import register_metric
 except ImportError:
     # some wacky CI paths prevent absolute importing, try relative
+    from .metrics import metric
     from . import cyclus
     from . import schemas
     from . import typesystem as ts
     from . import tools
     from .evaluator import register_metric
 
-from cymetric.metrics import metric
 
 ## The actual metrics ##
 
@@ -123,7 +124,7 @@ def decommissioning_cost(series):
         s_cost = s_cost.apply(lambda x: 4*cost*f_power[f_power['AgentId']==i][
                'Value'].iloc[0]/((duration-1)**2)*x*(x<=duration/2)-4*cost*
                f_power[f_power['AgentId']==i]['Value'].iloc[0]/((duration-
-               1)**2)*(x-dur$) # end missing
+               1)**2)*(x-dur) # end missing
         rtn = pd.concat([rtn,pd.DataFrame({'AgentId': i, 'Time': list(range(
             duration))+f_decom.DecomTime[i]//12, 'DecomPayment': s_cost})], 
             ignore_index=True)
