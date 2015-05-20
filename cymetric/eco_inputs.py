@@ -61,3 +61,9 @@ fuel_price = {} # dict with prices for different reactors (pwr, phwr, bwr, fr...
 #####################
 # Power plant costs #
 #####################
+
+def capital_shape(t0, duration, shape):
+    """Returns the . Important features are the possibility to
+    change the duration (increases costs, for the future, an
+    could be to make the the price variable, as a function of
+    the duration)."""
