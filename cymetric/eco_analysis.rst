@@ -2,12 +2,12 @@ Performing economic analysis with the economic tools provided by Cymetric
 =========================================================================
 
 
-Several functions are especially dedicated to the economic analysis of fuel cycles using Cymetric. The related files are the following : \n
-- eco_inputs.py \n
-- eco_metrics.py \n
-- lcoe.py \n
-- cash_flows.py \n
-- test_eco_metrics.py
+Several functions are especially dedicated to the economic analysis of fuel cycles using Cymetric. The related files are the following :
+|- eco_inputs.py
+|- eco_metrics.py
+|- lcoe.py
+|- cash_flows.py
+|- test_eco_metrics.py
 
 Economic metrics calculation
 ----------------------------
