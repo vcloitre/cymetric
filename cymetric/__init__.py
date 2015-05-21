@@ -13,8 +13,8 @@ try:
     from cymetric.evaluator import METRIC_REGISTRY, register_metric, \
         raw_to_series, Evaluator, eval
     from cymetric.execution import ExecutionContext, exec_code
-    from cymetric.eco_inputs import overnight
-    from cymetric.eco_metrics import capital_cost
+    from cymetric.eco.eco_inputs import overnight
+    from cymetric.eco.eco_metrics import capital_cost
 except ImportError:
     # again with the wacky CI issues
     from .cyclus import Datum, FullBackend, SqliteBack, Hdf5Back, \
@@ -28,5 +28,5 @@ except ImportError:
     from .evaluator import METRIC_REGISTRY, register_metric, \
         raw_to_series, Evaluator, eval
     from .execution import ExecutionContext, exec_code
-    from .eco_inputs import overnight
-    from .eco_metrics import capital_cost
+    from eco.eco_inputs import overnight
+    from eco.eco_metrics import capital_cost
