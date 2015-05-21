@@ -37,16 +37,13 @@ _ccschema = [('SimId', ts.UUID), ('AgentId', ts.INT),
 
 @metric(name='CapitalCost', depends=_ccdeps, schema=_ccschema)
 def capital_cost(series):
-    """cap_cost returns the cash flows per YEAR related to the capital costs of
-    a reactor. The overnight cost comes from WEO 2014 (cost in the US). The 
-    timeframe for the payment of the capital costs is drawn from of a graph
-    from EDF. Next steps could be make the price depends on the reactor 
-    technology and make the payment more realistic, ie include interest rates, 
-    improve the linear model and finally be able to fetch data"""
-    model_choice = input("How do you want to model the capital costs (linear, or random) ? ")
-    payment_begin = int(input("How many years before commissioning should the payment begin ? (give an integer or write \"random\") "))
-    payment_duration = int(input("How many years do you want the payment to last ? (give an integer or write \"random)\" "))
-    s_cost = capital_shape(payment_begin, payment_duration, model_choice)
+    """cap_cost returns the cash flows per YEAR (MAYBE BETTER PER MONTH FOR THE 
+    RANDOM ANALYSIS) related to the capital costs of a reactor. The overnight 
+    cost comes from WEO 2014 (cost in the US). The timeframe for the payment of 
+    the capital costs is drawn from of a graph from EDF. Next steps could be 
+    make the price depends on the reactor technology and make the payment more 
+    realistic, ie include interest rates, improve the linear model and finally 
+    be able to fetch data"""
     f_power = series[0].reset_index()
     f_entry = series[1].reset_index()
     f_entry = f_entry[f_entry.Spec == ":cycamore:Reactor"]
@@ -55,11 +52,48 @@ def capital_cost(series):
     f_entry = f_entry.set_index(['AgentId'])
     f_entry['Capacity'] = pd.Series()
     rtn = pd.DataFrame()
+    choice = input("Depending on how you want to model the capital costs, write \"quick results\" (default parameters), \"parameters definition\" (you will write your own parameters), \"mode selection\" (paramters autom or \"random parameters\" (according to gaussian distribution) ")
+    if choice == "random parameters":
+        lst = np.random.randn(len(id_reactors))
+        j = 0
+        for i in id_reactors:
+            payment_begin = 5 + lst[j] 
+            payment_duration = 10 + lst[j]
+            j += 1
+            s_cost = capital_shape(payment_begin, payment_duration, 
+                   model_choice)
+            f_entry['Capacity'][i] = f_power[f_power.AgentId == i][f_power.
+                                   Time == f_entry.EnterTime[i]].Value.iloc[0]
+            s_cost2 = np.around(s_cost * overnight * f_entry['Capacity'][i], 3)
+            reactor_i_df = pd.DataFrame({'AgentId': i, 'Time': pd.Series(
+                         list(range(payment_duration + 1))) - payment_begin + 
+                         f_entry.EnterTime[i] // 12, 'CashFlow' : s_cost2
+                         })
+            rtn = pd.concat([rtn, reactor_i_df], ignore_index=True)
+        rtn['SimId']=f_power.SimId.iloc[0]
+        cols = rtn.columns.tolist()
+        cols=cols[3:]+cols[:1]+cols[2:3]+cols[1:2]
+        rtn = rtn[cols]
+        return rtn
+    else if choice == "quick results":
+        model_choice = "linear"
+        payment_begin = 5
+        payment_duration = 10
+    else if choice == "parameters definition"
+        model_choice = input("How do you want to model the capital costs (linear, or random) ? ")
+        payment_begin = int(input("How many years before commissioning should the payment begin ? (give an integer or write \"random\") "))
+        payment_duration = int(input("How many years do you want the payment to last ? (give an integer or write \"random)\" "))
+    else raise Exception("Wrong input, you have to choose between \"quick results\", \"parameters definition\" and \"random parameters\")
+    s_cost = capital_shape(payment_begin, payment_duration, model_choice)
     for i in id_reactors:
         f_entry['Capacity'][i] = f_power[f_power.AgentId == i][f_power.Time ==
                                f_entry.EnterTime[i]].Value.iloc[0]
         s_cost2 = np.around(s_cost * overnight * f_entry['Capacity'][i], 3)
-        rtn = pd.concat([rtn,pd.DataFrame({'AgentId': i, 'Time': pd.Series(list(range(payment_duration + 1)))-payment_begin+f_entry.EnterTime[i]//12, 'CashFlow' : s_cost2})], ignore_index=True)
+        reactor_i_df = pd.DataFrame({'AgentId': i, 'Time': pd.Series(
+                   list(range(payment_duration + 1))) - payment_begin + 
+                   f_entry.EnterTime[i] // 12, 'CashFlow' : s_cost2
+                   })
+        rtn = pd.concat([rtn, reactor_i_df], ignore_index=True)
     rtn['SimId']=f_power.SimId.iloc[0]
     cols = rtn.columns.tolist()
     cols=cols[3:]+cols[:1]+cols[2:3]+cols[1:2]

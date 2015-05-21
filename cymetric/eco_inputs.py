@@ -72,13 +72,14 @@ fuel_price = {}
 
 shapes = ["linear"]
 
-def capital_shape(t0, duration, shape):
+def capital_shape(t0, duration, shape, mode=stadard):
     """Returns the values corresponding to annual costs corresponding to  
     capital cots (per kW). Duration could be optional, and then one thousand 
     simulation with random durations could be calculated. An important feature 
     is the possibility to change both the date before commissioning when the 
     paiement starts and the duration (increases costs, for the future, an could
-    be to make the the price variable, as a function of the duration).
+    be to make the the price variable, as a function of the duration). 3 modes
+    can be chosen : delay, standard or in advance
     """
     if not isinstance(t0, int):
         raise Exception("Year begin for paiement must be an integer")
