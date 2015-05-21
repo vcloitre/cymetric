@@ -28,5 +28,5 @@ except ImportError:
     from .evaluator import METRIC_REGISTRY, register_metric, \
         raw_to_series, Evaluator, eval
     from .execution import ExecutionContext, exec_code
-    from eco.eco_inputs import overnight
-    from eco.eco_metrics import capital_cost
+    from .eco.eco_inputs import overnight
+    from .eco.eco_metrics import capital_cost
