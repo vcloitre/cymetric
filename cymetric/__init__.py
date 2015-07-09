@@ -13,8 +13,9 @@ try:
     from cymetric.evaluator import METRIC_REGISTRY, register_metric, \
         raw_to_series, Evaluator, eval
     from cymetric.execution import ExecutionContext, exec_code
-    from cymetric.eco.eco_inputs import overnight
-    from cymetric.eco.eco_metrics import capital_cost
+    from cymetric.eco_inputs import default_cap_overnight
+    from cymetric.eco_metrics import capital_cost
+    from cymetric.cash_flows import lcoe_plot
 except ImportError:
     # again with the wacky CI issues
     from .cyclus import Datum, FullBackend, SqliteBack, Hdf5Back, \
@@ -28,5 +29,6 @@ except ImportError:
     from .evaluator import METRIC_REGISTRY, register_metric, \
         raw_to_series, Evaluator, eval
     from .execution import ExecutionContext, exec_code
-    from .eco.eco_inputs import overnight
-    from .eco.eco_metrics import capital_cost
+    from .eco_inputs import default_cap_overnight
+    from .eco_metrics import capital_cost
+    from .cash_flows import lcoe_plot
