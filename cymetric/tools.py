@@ -1,3 +1,17 @@
+Skip to content
+This repository  
+Pull requests
+Issues
+Gist
+ @vcloitre
+ Unwatch 1
+  Star 0
+ Fork 7vcloitre/cymetric
+forked from cyclus/cymetric
+ branch: eco  cymetric/cymetric/tools.py
+@vcloitrevcloitre 8 days ago fix for dataframe structure changes when calculating a metric
+2 contributors @scopatz @vcloitre
+RawBlameHistory     79 lines (65 sloc)  2.143 kB
 """General cymetric tools.
 """
 from __future__ import unicode_literals, print_function
@@ -26,7 +40,7 @@ def dbopen(fname):
 def raw_to_series(df, idx, val):
     """Convert data frame to series with multi-index."""
     d = df.set_index(list(map(str, idx)))
-    s = df[val]
+    s = df[val].copy()
     s.index = d.index
     return s
 
@@ -76,3 +90,5 @@ def raise_no_pyne(msg, have_pyne=False):
     """Raise an error when PyNE cannot be found."""
     if not have_pyne:
         raise ImportError('pyne could not be imported: ' + msg)
+Status API Training Shop Blog About Help
+© 2015 GitHub, Inc. Terms Privacy Security Contact
