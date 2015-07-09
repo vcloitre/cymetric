@@ -38,6 +38,9 @@ _ccdeps = [('TimeSeriesPower', ('SimId', 'AgentId', 'Value'), 'Time'), ('AgentEn
 _ccschema = [('SimId', ts.UUID), ('AgentId', ts.INT),
              ('Time', ts.INT), ('Payment', ts.DOUBLE)]
 
+def f(x):
+    print(x)
+
 @metric(name='CapitalCost', depends=_ccdeps, schema=_ccschema)
 def capital_cost(series):
     """cap_cost returns the cash flows per YEAR (MAYBE BETTER PER MONTH FOR THE 
@@ -69,6 +72,7 @@ def capital_cost(series):
     discount_rate = default_discount_rate
     print(0) # test
     print(0.5) # test
+    return f_power # test
     if os.path.isfile(xml_inputs):
     	print(1) # test
     	tree = ET.parse(xml_inputs)
