@@ -38,7 +38,7 @@ _ccdeps = [('TimeSeriesPower', ('SimId', 'AgentId', 'Value'), 'Time'), ('AgentEn
 _ccschema = [('SimId', ts.UUID), ('AgentId', ts.INT),
              ('Time', ts.INT), ('Payment', ts.DOUBLE)]
 
-def f(x):
+def f(x): # test
     print(x)
 
 @metric(name='CapitalCost', depends=_ccdeps, schema=_ccschema)
@@ -68,7 +68,8 @@ def capital_cost(series):
     begin = [default_cap_begin] * len(id_reactors)
     duration = [default_cap_duration] * len(id_reactors)
     shape = default_cap_shape
-    overnight_cost = default_cap_overnight
+    overnight_cost = 0 # test default_cap_overnight
+    default_cap_overnight = 0 # test
     discount_rate = default_discount_rate
     print(0) # test
     print(0.5) # test
