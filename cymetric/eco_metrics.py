@@ -288,6 +288,7 @@ def fuel_cost(series):
     """fuel_cost returns the cash flows related to the fuel costs for power 
     plants.
     """
+    print(0) # test
     fuel_price = 2360 # $/kg
     # see http://www.world-nuclear.org/info/Economic-Aspects/Economics-of-Nuclear-Power/
     # need to add a dictionnary with diff commodities and prices (uox, wast etc..)
