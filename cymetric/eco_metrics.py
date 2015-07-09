@@ -38,9 +38,6 @@ _ccdeps = [('TimeSeriesPower', ('SimId', 'AgentId', 'Value'), 'Time'), ('AgentEn
 _ccschema = [('SimId', ts.UUID), ('AgentId', ts.INT),
              ('Time', ts.INT), ('Payment', ts.DOUBLE)]
 
-def f(x): # test
-    print(x)
-
 @metric(name='CapitalCost', depends=_ccdeps, schema=_ccschema)
 def capital_cost(series):
     """cap_cost returns the cash flows per YEAR (MAYBE BETTER PER MONTH FOR THE 
@@ -68,12 +65,10 @@ def capital_cost(series):
     begin = [default_cap_begin] * len(id_reactors)
     duration = [default_cap_duration] * len(id_reactors)
     shape = default_cap_shape
-    overnight_cost = 0 # test default_cap_overnight
-    default_cap_overnight = 0 # test
+    overnight_cost = default_cap_overnight
     discount_rate = default_discount_rate
     print(0) # test
     print(0.5) # test
-    return f_power # test
     if os.path.isfile(xml_inputs):
     	print(1) # test
     	tree = ET.parse(xml_inputs)
