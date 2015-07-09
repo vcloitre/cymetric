@@ -12,7 +12,7 @@ import numpy as np
 # see d'Haeseleer (2013 data)
 
 # Region level
-default_discount_rate = 0.05
+default_discount_rate = 0.1
 #tax_rate = # %
 #depreciation_schedule = # depreciation type
 #depreciation_time = # years
