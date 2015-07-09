@@ -26,7 +26,7 @@ default_discount_rate = 0.1
 #variableOM = # $/MWh
 #default_fixedOM
 #default_variableOM
-defaultOM = 15 # $/MWh
+defaultOM = 10 # $/MWh
 
 # Facility level
 #overnight = 5000 # $/MW cap or maybe overnight cap cost
