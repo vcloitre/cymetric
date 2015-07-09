@@ -17,58 +17,43 @@ from cymetric import eco_metrics
 from cymetric.tools import raw_to_series, ensure_dt_bytes
 
 
-
-
 def test_capital_cost():
+    """Plan for the test : first, with own param (one default) : same as usual, see if obs=exp
+    This test shows that the capital_cost function can calculate the cost given the parameters, and that the different levels of parameters can be read : one at the facility level, the other at region level...
+    To verify that random parameters work, only need to test the iter function and see if we obtain different values
+    """
     exp = pd.DataFrame(np.array([
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 9, 0),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 10, 343.75),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 11, 687.5),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 12, 1031.25),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 13, 1375.0),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 14, 1718.75),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 15, 2062.5),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 16, 2406.25),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 17, 2750.0),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 18, 1375.0),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 19, 0),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 20, -8, 0),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 20, -7, 750.0),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 20, -6, 1500.0),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 20, -5, 2250.0),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 20, -4, 3000.0),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 20, -3, 3750.0),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 20, -2, 4500.0),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 20, -1, 5250.0),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 20, 0, 6000.0),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 20, 1, 3000.0),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 20, 2, 0)
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 0, 112312.244694),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 1, 114282.634951),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 2, 116253.025209),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 3, 118223.415467),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 4, 115760.427645)
         ], dtype=ensure_dt_bytes([
-             ('SimId','O'), ('AgentId', '<i8'), ('Time','<i8'),
-             ('CashFlow', '<f8')]))
+        		('SimId','O'), ('AgentId', '<i8'), ('Time','<i8'),
+        		('Payment', '<f8')]))
         )
     power = pd.DataFrame(np.array([
-          (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 20, 12, 3),
-          (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 20, 12, 4),
-          (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 20, 12, 5),
-          (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 5.5, 210),
-          (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 5.5, 211),
-          (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 5.5, 212),
-          (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 5.5, 213)
+          (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 1, 3),
+          (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 1, 4)
           ], dtype=ensure_dt_bytes([
                   ('SimId', 'O'), ('AgentId', '<i8'), ('Value', '<f8'),
                   ('Time', '<i8')]))
           )
     entry = pd.DataFrame(np.array([
-          (13, ':cycamore:Reactor', 210),
-          (20, ':cycamore:Reactor', 3),
-          (4, ':cycamore:Sink', 1)
-          ], dtype=ensure_dt_bytes([('AgentId', '<i8'), ('Spec', 'O'),
-                  ('EnterTime', '<i8')]))
+          (13, 1, ':cycamore:Reactor', 3),
+          (1, -1, ':cycamore:DeployInst', 2)
+          ], dtype=ensure_dt_bytes([('AgentId', '<i8'), ('ParentId', '<i8'),
+          		('Spec', 'O'), ('EnterTime', '<i8')]))
           )
+    info = pd.DataFrame(np.array([
+    	 (2005, 4, 5)
+    	 ], dtype=ensure_dt_bytes([('InitialYear', '<i8'),
+    	 		 ('InitialMonth', '<i8'), ('Duration', '<i8')]))
+    	 )
     s1 = power.set_index(['SimId', 'AgentId', 'Value'])['Time']
-    s2 = entry.set_index(['AgentId', 'Spec'])['EnterTime']
-    series = [s1, s2]
+    s2 = entry.set_index(['AgentId', 'ParentId', 'Spec'])['EnterTime']
+    s3 = info.set_index(['InitialYear', 'InitialMonth'])['Duration']
+    series = [s1, s2, s3]
     obs = eco_metrics.capital_cost.func(series)
     assert_frame_equal(exp, obs)
 
@@ -77,10 +62,10 @@ def test_fuel_cost():
     exp = pd.DataFrame(np.array([
         (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 34, 1, 'uox', 
         29641.600000000002, 46),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 11, 3, 'mox', 0, 9)
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 11, 3, 'mox', 12980.0, 9)
         ], dtype=ensure_dt_bytes([
              ('SimId','O'), ('TransactionId', '<i8'), ('ReceiverId','<i8'),
-             ('Commodity', 'O'), ('Cost', '<f8'), ('Time', '<i8')]))
+             ('Commodity', 'O'), ('Payment', '<f8'), ('Time', '<i8')]))
         )
     resources = pd.DataFrame(np.array([
               (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 27, 12.56),
@@ -109,53 +94,37 @@ def test_fuel_cost():
 
 def test_decommissioning_cost():
     exp = pd.DataFrame(np.array([
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 0, 19),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/49, 20),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/49*2, 21),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/7*3/7, 22),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/7*4/7, 23),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/7*5/7, 24),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/7*6/7, 25),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/7, 26),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/7*6/7, 27),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/7*5/7, 28),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/7*4/7, 29),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/7*3/7, 30),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/49*2, 31),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 7500/49, 32),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 0, 33)
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 27, 0, 60),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 27, 1516.778523, 61),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 27, 3033.557047, 62),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 27, 4550.335570, 63),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 27, 6067.114094, 64)
         ], dtype=ensure_dt_bytes([
-             ('SimId','O'), ('AgentId', '<i8'), ('DecomPayment','<f8'),
+             ('SimId','O'), ('AgentId', '<i8'), ('Payment','<f8'),
              ('Time', '<i8')]))
         )
-    decom = pd.DataFrame(np.array([
-              (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 234),
-              (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 5, 450)
-              ], dtype=ensure_dt_bytes([
-                      ('SimId', 'O'), ('AgentId', '<i8'), ('DecomTime', 
-                      '<i8'),]))
-              )
     power = pd.DataFrame(np.array([
-                 (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 10.0),
                  (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 27, 11.3)
                  ], dtype=ensure_dt_bytes([
-                         ('SimId', 'O'), ('AgentId', '<i8'), ('Value', 
-                         '<f8')]))
+                         ('SimId', 'O'), ('AgentId', '<i8'),
+                         ('Value', '<f8')]))
                  )
     entry = pd.DataFrame(np.array([
-                 (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 27, 
-                 ':cycamore:Reactor'),
-                 (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 
-                 ':cycamore:Reactor'),
-                 (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 5, 
-                 ':cycamore:Sink')
+                 (10, 50, 27, ':cycamore:Reactor'),
+                 (1, 40, 5, ':cycamore:Sink')
                  ], dtype=ensure_dt_bytes([
-                         ('SimId', 'O'), ('AgentId', '<i8'),
-                         ('Spec', 'O')]))
+                         ('EnterTime', '<i8'), ('Lifetime', '<i8'),
+                         ('AgentId', '<i8'), ('Spec', 'O')]))
                  )
-    s1 = decom.set_index(['SimId', 'AgentId'])['DecomTime']
-    s2 = power.set_index(['SimId', 'AgentId'])['Value']
-    s3 = entry.set_index(['SimId', 'AgentId'])['Spec']
+    info = pd.DataFrame(np.array([
+              (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 2011, 8, 65)
+              ], dtype=ensure_dt_bytes([
+                      ('SimId', 'O'), ('InitialYear', '<i8'),
+                      ('InitialMonth', '<i8'),('Duration', '<i8')]))
+              )
+    s1 = power.set_index(['SimId', 'AgentId'])['Value']
+    s2 = entry.set_index(['EnterTime', 'Lifetime', 'AgentId'])['Spec']
+    s3 = info.set_index(['SimId', 'InitialYear', 'InitialMonth'])['Duration']
     series = [s1, s2, s3]
     obs = eco_metrics.decommissioning_cost.func(series)
     assert_frame_equal(exp, obs)
@@ -163,18 +132,17 @@ def test_decommissioning_cost():
 
 def test_operation_maintenance():
     exp = pd.DataFrame(np.array([
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 0, 232.3),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 2, 232.3),
-        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 5, 8, 400)
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 0, 25436.85),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 2, 25436.85),
+        (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 5, 8, 43800.0)
         ], dtype=ensure_dt_bytes([
              ('SimId','O'), ('AgentId', '<i8'), ('Time', '<i8'),
-             ('O&MPayment','<f8')]))
+             ('Payment','<f8')]))
         )
     power = pd.DataFrame(np.array([
+              (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 0, 2.323),
               (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 2, 2.323),
-              (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 3, 2.323),
-              (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 13, 32, 2.323),
-              (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 5, 100, 4)
+              (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 5, 8, 4.0)
               ], dtype=ensure_dt_bytes([
                       ('SimId', 'O'), ('AgentId', '<i8'), ('Time', '<i8'),
                       ('Value', '<f8')]))
