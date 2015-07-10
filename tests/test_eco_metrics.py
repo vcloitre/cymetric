@@ -64,7 +64,7 @@ def test_fuel_cost():
         29641.600000000002, 46),
         (UUID('f22f2281-2464-420a-8325-37320fd418f8'), 11, 3, 'mox', 12980.0, 9)
         ], dtype=ensure_dt_bytes([
-             ('SimId','O'), ('TransactionId', '<i8'), ('ReceiverId','<i8'),
+             ('SimId','O'), ('TransactionId', '<i8'), ('AgentId','<i8'),
              ('Commodity', 'O'), ('Payment', '<f8'), ('Time', '<i8')]))
         )
     resources = pd.DataFrame(np.array([

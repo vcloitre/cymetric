@@ -275,7 +275,7 @@ _fcdeps = [('Resources', ('SimId', 'ResourceId'), 'Quantity'), ('Transactions',
         ('SimId', 'TransactionId', 'ReceiverId', 'ResourceId', 'Commodity'), 
         'Time')]
 
-_fcschema = [('SimId', ts.UUID), ('TransactionId', ts.INT), ('ReceiverId', 
+_fcschema = [('SimId', ts.UUID), ('TransactionId', ts.INT), ('AgentId', 
           ts.INT), ('Commodity', ts.STRING), ('Payment', ts.DOUBLE), ('Time', 
           ts.INT)]
 
@@ -298,6 +298,7 @@ def fuel_cost(series):
     subset = rtn.columns.tolist()
     subset = subset[1:5]+subset[6:]+subset[5:6]
     rtn = rtn[subset]
+    rtn.columns = ['SimId', 'TransactionId', 'AgentId', 'Commodity', 'Payment', 'Time']
     return rtn
 
 del _fcdeps, _fcschema

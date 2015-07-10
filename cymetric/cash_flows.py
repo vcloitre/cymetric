@@ -45,7 +45,7 @@ def annual_costs(output_db, reactor_id, capital=True):
     costs['OandM'] = f_OM['Payment']
     waste_disposal = 1
     f_fuel = evaler.eval('FuelCost').reset_index()
-    f_fuel = f_fuel[f_fuel.ReceiverId==reactor_id]
+    f_fuel = f_fuel[f_fuel.AgentId==reactor_id]
     f_fuel = f_fuel.groupby('Time').sum()
     costs['Fuel'] = f_fuel['Payment']
     costs = costs.fillna(0)
@@ -127,7 +127,7 @@ def period_costs(output_db, reactor_id, period=20, capital=True):
 	f_OM = f_OM[f_OM['AgentId']==reactor_id].set_index('Time')
 	f_OM = f_OM['Payment']
 	f_fuel = evaler.eval('FuelCost').reset_index()
-	f_fuel = f_fuel[f_fuel['ReceiverId']==reactor_id].set_index('Time')
+	f_fuel = f_fuel[f_fuel['AgentId']==reactor_id].set_index('Time')
 	f_fuel = f_fuel['Payment']
 	if capital:
 		total = pd.concat([f_capital, f_decom, f_OM, f_fuel])
@@ -197,7 +197,7 @@ def institution_annual_costs(output_db, institution_id, capital=True):
 	costs['OandM'] = f_OM['Payment']
 	waste_disposal = 1
 	f_fuel = evaler.eval('FuelCost').reset_index()
-	f_fuel = f_fuel[f_fuel['ReceiverId'].apply(lambda x: x in id_reactor)]
+	f_fuel = f_fuel[f_fuel['AgentId'].apply(lambda x: x in id_reactor)]
 	f_fuel = f_fuel.groupby('Time').sum()
 	costs['Fuel'] = f_fuel['Payment']
 	costs = costs.fillna(0)
@@ -240,7 +240,7 @@ def institution_period_costs(output_db, institution_id, period=20, capital=True)
 	f_OM = f_OM[f_OM['AgentId'].apply(lambda x: x in id_reactor)].set_index('Time')
 	f_OM = f_OM['Payment']
 	f_fuel = evaler.eval('FuelCost').reset_index()
-	f_fuel = f_fuel[f_fuel['ReceiverId'].apply(lambda x: x in id_reactor)].set_index('Time')
+	f_fuel = f_fuel[f_fuel['AgentId'].apply(lambda x: x in id_reactor)].set_index('Time')
 	f_fuel = f_fuel['Payment']
 	if capital:
 		total = pd.concat([f_capital, f_decom, f_OM, f_fuel])
@@ -317,7 +317,7 @@ def region_annual_costs(output_db, region_id, capital=True):
 	costs['OandM'] = f_OM['Payment']
 	waste_disposal = 1
 	f_fuel = evaler.eval('FuelCost').reset_index()
-	f_fuel = f_fuel[f_fuel['ReceiverId'].apply(lambda x: x in id_reactor)]
+	f_fuel = f_fuel[f_fuel['AgentId'].apply(lambda x: x in id_reactor)]
 	f_fuel = f_fuel.groupby('Time').sum()
 	costs['Fuel'] = f_fuel['Payment']
 	costs = costs.fillna(0)
@@ -364,7 +364,7 @@ def region_period_costs(output_db, region_id, period=20, capital=True):
 	f_OM = f_OM[f_OM['AgentId'].apply(lambda x: x in id_reactor)].set_index('Time')
 	f_OM = f_OM['Payment']
 	f_fuel = evaler.eval('FuelCost').reset_index()
-	f_fuel = f_fuel[f_fuel['ReceiverId'].apply(lambda x: x in id_reactor)].set_index('Time')
+	f_fuel = f_fuel[f_fuel['AgentId'].apply(lambda x: x in id_reactor)].set_index('Time')
 	f_fuel = f_fuel['Payment']
 	if capital:
 		total = pd.concat([f_capital, f_decom, f_OM, f_fuel])
