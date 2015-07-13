@@ -182,13 +182,17 @@ def institution_annual_costs(output_db, institution_id, capital=True):
 	initial_year = f_info.loc[0, 'InitialYear']
 	initial_month = f_info.loc[0, 'InitialMonth']
 	if os.path.isfile(xml_inputs):
+		print(1) # test
 		tree = ET.parse(xml_inputs)
 		root = tree.getroot()
 		if root.find('truncation'):
+			print(2) # test
 			truncation = root.find('truncation')
 			if truncation.find('simulation_begin'):
+				print(3) # test
 				simulation_begin = int(truncation.find('simulation_begin').text)
 			else:
+				print(3.5) # test
 				simulation_begin = 0
 			if truncation.find('simulation_end'):
 				simulation_end = int(truncation.find('simulation_end').text)
