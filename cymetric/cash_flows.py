@@ -182,24 +182,18 @@ def institution_annual_costs(output_db, institution_id, capital=True):
 	initial_year = f_info.loc[0, 'InitialYear']
 	initial_month = f_info.loc[0, 'InitialMonth']
 	if os.path.isfile(xml_inputs):
-		print(1) # test
 		tree = ET.parse(xml_inputs)
 		root = tree.getroot()
 		if root.find('truncation') is not None:
-			print(2) # test
 			truncation = root.find('truncation')
 			if truncation.find('simulation_begin') is not None:
-				print(3) # test
 				simulation_begin = int(truncation.find('simulation_begin').text)
 			else:
-				print(3.5) # test
 				simulation_begin = 0
 			if truncation.find('simulation_end') is not None:
 				simulation_end = int(truncation.find('simulation_end').text)
 			else:
 				simulation_end = duration
-	print(simulation_begin) # test
-	print(simulation_end) # test
 	f_entry = evaler.eval('AgentEntry').reset_index()
 	f_entry = f_entry[f_entry.ParentId==institution_id]
 	f_entry = f_entry[f_entry['EnterTime'].apply(lambda x: x>simulation_begin and x<simulation_end)]
@@ -225,6 +219,8 @@ def institution_annual_costs(output_db, institution_id, capital=True):
 	costs['Fuel'] = f_fuel['Payment']
 	costs = costs.fillna(0)
 	costs['Year'] = (costs.index + initial_month - 1) // 12 + initial_year
+	end_year = (simulation_end + initial_month - 1) // 12 + initial_year
+	costs = costs[costs['Year'].apply(lambda x : x <= end_year)]
 	if not capital:
 		del costs['Capital']
 	costs = costs.groupby('Year').sum()
