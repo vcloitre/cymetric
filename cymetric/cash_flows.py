@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from cymetric.tools import dbopen
 from cymetric.evaluator import Evaluator
-from cymetric.eco_inputs import default_cap_overnight, default_discount_rate
+from cymetric.eco_inputs import default_cap_overnight, default_discount_rate, default_fuel_price
 import warnings
 import os
 import xml.etree.ElementTree as ET
@@ -172,7 +172,7 @@ def power_generated(output_db, reactor_id):
    
 # Institution level
     
-def institution_annual_costs(output_db, institution_id, capital=True):
+def institution_annual_costs(output_db, institution_id, capital=True, truncation=True):
 	"""reactors annual costs for a given institution returned as a pandas DataFrame containing total annual costs for each reactor id
 	"""
 	db = dbopen(output_db)
@@ -219,14 +219,17 @@ def institution_annual_costs(output_db, institution_id, capital=True):
 	costs['Fuel'] = f_fuel['Payment']
 	costs = costs.fillna(0)
 	costs['Year'] = (costs.index + initial_month - 1) // 12 + initial_year
-	end_year = (simulation_end + initial_month - 1) // 12 + initial_year
-	costs = costs[costs['Year'].apply(lambda x : x <= end_year)]
+	if truncation:
+		end_year = (simulation_end + initial_month - 1) // 12 + initial_year
+		costs = costs[costs['Year'].apply(lambda x : x <= end_year)]
+		begin_year = (simulation_begin + initial_month - 1) // 12 + initial_year
+		costs = costs[costs['Year'].apply(lambda x : x >= begin_year)]
 	if not capital:
 		del costs['Capital']
 	costs = costs.groupby('Year').sum()
 	return costs
 		
-def institution_annual_costs_present_value(output_db, institution_id, capital=True):
+def institution_annual_costs_present_value(output_db, institution_id, capital=True, truncation=True):
 	df = institution_annual_costs(output_db, institution_id, capital)
 	for year in df.index:
 		df.loc[year, :] = df.loc[year, :] / (1 + default_discount_rate) ** (year - df.index[0])
@@ -301,23 +304,80 @@ def institution_period_costs(output_db, institution_id, t0=0, period=20, capital
 	rtn.index.name = 'Time'
 	return rtn
 		
-def institution_power_generated(output_db, institution_id):
-	"""
+def institution_period_costs2(output_db, institution_id, t0=0, period=20, capital=True):
+	"""New manner to calculate price of electricity, maybe more accurate than lcoe : calculate all costs in a n years period and then determine how much the cost of electricity should be at an institutional level
+	costs used to calculate period costs at date t are [t+t0, t+t0+period]
 	"""
 	db = dbopen(output_db)
 	evaler = Evaluator(db)
-	f_power = evaler.eval('TimeSeriesPower').reset_index()
-	f_entry = evaler.eval('AgentEntry').reset_index()
-	tmp = f_entry[f_entry.ParentId==institution_id]
-	id_reactor = tmp[tmp['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist()
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
 	initial_month = f_info.loc[0, 'InitialMonth']
+	if os.path.isfile(xml_inputs):
+		tree = ET.parse(xml_inputs)
+		root = tree.getroot()
+		if root.find('truncation') is not None:
+			truncation = root.find('truncation')
+			if truncation.find('simulation_begin') is not None:
+				simulation_begin = int(truncation.find('simulation_begin').text)
+			else:
+				simulation_begin = 0
+			if truncation.find('simulation_end') is not None:
+				simulation_end = int(truncation.find('simulation_end').text)
+			else:
+				simulation_end = duration
+	costs = instution_annual_costs(output_db, institution_id, capital, truncation=False)
+	costs = costs.sum(axis=1)
+	power = institution_power_generated(output_db, institution_id, truncation=False)
+	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
+	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
+	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end)))
+	rtn['Power'] = pd.Series()
+	rtn['Payment'] = pd.Series()
+	for i in range(simulation_begin + t0, simulation_begin + t0 + period):	
+		rtn.loc[simulation_begin, 'Power'] += power[i] / (1 + default_discount_rate) ** (i - simulation_begin)
+		rtn.loc[simulation_begin, 'Payment'] += costs[i] / (1 + default_discount_rate) ** (i - simulation_begin)
+	for j in range(simulation_begin + 1, simulation_end + 1):
+		rtn.loc[j, 'Power'] = rtn.loc[j - 1, 'Power'] * (1 + default_discount_rate) - power[j + t0] * (1 + default_discount_rate) ** (1 - t0) + power[j + 1 + period + t0] / (1 + default_discount_rate) ** (period + t0)
+		rtn.loc[j, 'Payment'] = rtn.loc[j - 1, 'Payment'] * (1 + default_discount_rate) - costs[j + t0] * (1 + default_discount_rate) ** (1 - t0) + costs[j + 1 + period + t0] / (1 + default_discount_rate) ** (period + t0)
+			#tmp['WasteManagement'][j] = pd.Series()
+	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
+	return rtn
+		
+def institution_power_generated(output_db, institution_id, truncation=True):
+	"""
+	"""
+	db = dbopen(output_db)
+	evaler = Evaluator(db)
+	f_info = evaler.eval('Info').reset_index()
+	duration = f_info.loc[0, 'Duration']
+	initial_year = f_info.loc[0, 'InitialYear']
+	initial_month = f_info.loc[0, 'InitialMonth']
+	if os.path.isfile(xml_inputs):
+		tree = ET.parse(xml_inputs)
+		root = tree.getroot()
+		if root.find('truncation') is not None:
+			truncation = root.find('truncation')
+			if truncation.find('simulation_begin') is not None:
+				simulation_begin = int(truncation.find('simulation_begin').text)
+			else:
+				simulation_begin = 0
+			if truncation.find('simulation_end') is not None:
+				simulation_end = int(truncation.find('simulation_end').text)
+			else:
+				simulation_end = duration
+	f_entry = evaler.eval('AgentEntry').reset_index()
+	f_entry = f_entry[f_entry.ParentId==institution_id]
+	f_entry = f_entry[f_entry['EnterTime'].apply(lambda x: x>simulation_begin and x<simulation_end)]
+	id_reactor = f_entry[f_entry['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist()
+	f_power = evaler.eval('TimeSeriesPower').reset_index()
 	f_power = f_power[f_power['AgentId'].apply(lambda x: x in id_reactor)]
 	f_power['Year'] = (f_power['Time'] + initial_month - 1) // 12 + initial_year
 	f_power = f_power.groupby('Year').sum()
-	return f_power['Value'] * 8760 / 12
+	rtn = f_power['Value'] * 8760 / 12
+	rtn.name = 'Power in MWh'
+	return rtn
 
 		
 # Region level
