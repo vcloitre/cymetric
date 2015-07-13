@@ -29,6 +29,7 @@ except ImportError:
     from .evaluator import register_metric
     from .eco_inputs import capital_shape, rapid_cap_begin, rapid_cap_duration, slow_cap_begin, slow_cap_duration, default_cap_begin, default_cap_duration, default_cap_overnight, default_cap_shape, default_discount_rate
 
+xml_inputs = 'parameters.xml' # temporary solution : always store an xml file in your working directory that you will have to use. This file have to be known
 
 ## The actual metrics ##
 
@@ -61,7 +62,6 @@ def capital_cost(series):
     f_entry = f_entry.set_index(['AgentId'])
     f_entry['Capacity'] = pd.Series()
     rtn = pd.DataFrame()
-    xml_inputs = 'parameters.xml' # temporary solution : always store an xml file in your working directory that you will have to use. This file have to be known
     begin = [default_cap_begin] * len(id_reactors)
     duration = [default_cap_duration] * len(id_reactors)
     shape = default_cap_shape

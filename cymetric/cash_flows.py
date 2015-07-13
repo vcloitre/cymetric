@@ -9,7 +9,10 @@ from cymetric.tools import dbopen
 from cymetric.evaluator import Evaluator
 from cymetric.eco_inputs import default_cap_overnight, default_discount_rate
 import warnings
+import os
+import xml.etree.ElementTree as ET
 
+xml_inputs = 'parameters.xml' # temporary solution : always store an xml file in your working directory that you will have to use. This file have to be known
 
         
 ####################################################################
@@ -173,19 +176,33 @@ def institution_annual_costs(output_db, institution_id, capital=True):
 	"""reactors annual costs for a given institution returned as a pandas DataFrame containing total annual costs for each reactor id
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
-	f_info = evaler.eval('Info').reset_index()
-	duration = f_info.loc[0, 'Duration']
-	initial_year = f_info.loc[0, 'InitialYear']
-	initial_month = f_info.loc[0, 'InitialMonth']
+    evaler = Evaluator(db)
+    f_info = evaler.eval('Info').reset_index()
+    duration = f_info.loc[0, 'Duration']
+    initial_year = f_info.loc[0, 'InitialYear']
+    initial_month = f_info.loc[0, 'InitialMonth']
+    if os.path.isfile(xml_inputs):
+    	tree = ET.parse(xml_inputs)
+    	root = tree.getroot()
+    	if root.find('truncation'):
+    		truncation = root.find('truncation')
+    		if truncation.find('simulation_begin'):
+    			simulation_begin = int(truncation.find('simulation_begin').text)
+    		else:
+    			simulation_begin = 0
+    		if truncation.find('simulation_end'):
+    			simulation_end = int(truncation.find('simulation_end').text)
+    		else:
+    			simulation_end = duration
 	f_entry = evaler.eval('AgentEntry').reset_index()
 	f_entry = f_entry[f_entry.ParentId==institution_id]
+	f_entry = f_entry[f_entry['EnterTime'].apply(lambda x: x>simulation_begin and x<simulation_end)]
 	id_reactor = f_entry[f_entry['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist()
 	f_capital = evaler.eval('CapitalCost').reset_index()
 	f_capital = f_capital[f_capital['AgentId'].apply(lambda x: x in id_reactor)]
 	mini = min(f_capital['Time'])
 	f_capital = f_capital.groupby('Time').sum()
-	costs = pd.DataFrame({'Capital' : f_capital['Payment']}, index=list(range(0, duration)))
+	costs = pd.DataFrame({'Capital' : f_capital['Payment']}, index=list(range(mini, duration)))
 	f_decom = evaler.eval('DecommissioningCost').reset_index()
 	if not f_decom.empty:
 		f_decom = f_decom[f_decom['AgentId'].apply(lambda x: x in id_reactor)]

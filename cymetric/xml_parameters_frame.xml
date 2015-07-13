@@ -62,4 +62,8 @@
 
 	<waste_fee>
 	</waste_fee>
+	<simulation_begin>
+	</simulation_begin>
+	<simulation_end>
+	</simulation_end>
 </model>
