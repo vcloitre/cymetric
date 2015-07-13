@@ -194,6 +194,8 @@ def institution_annual_costs(output_db, institution_id, capital=True):
 				simulation_end = int(truncation.find('simulation_end').text)
 			else:
 				simulation_end = duration
+	print(simulation_begin) # test
+	print(simulation_end) # test
 	f_entry = evaler.eval('AgentEntry').reset_index()
 	f_entry = f_entry[f_entry.ParentId==institution_id]
 	f_entry = f_entry[f_entry['EnterTime'].apply(lambda x: x>simulation_begin and x<simulation_end)]
