@@ -173,27 +173,27 @@ def power_generated(output_db, reactor_id):
 # Institution level
     
 def institution_annual_costs(output_db, institution_id, capital=True):
-    """reactors annual costs for a given institution returned as a pandas DataFrame containing total annual costs for each reactor id
-    """
-    db = dbopen(output_db)
-    evaler = Evaluator(db)
-    f_info = evaler.eval('Info').reset_index()
-    duration = f_info.loc[0, 'Duration']
-    initial_year = f_info.loc[0, 'InitialYear']
-    initial_month = f_info.loc[0, 'InitialMonth']
-    if os.path.isfile(xml_inputs):
-    	tree = ET.parse(xml_inputs)
-    	root = tree.getroot()
-    	if root.find('truncation'):
-    		truncation = root.find('truncation')
-    		if truncation.find('simulation_begin'):
-    			simulation_begin = int(truncation.find('simulation_begin').text)
-    		else:
-    			simulation_begin = 0
-    		if truncation.find('simulation_end'):
-    			simulation_end = int(truncation.find('simulation_end').text)
-    		else:
-    			simulation_end = duration
+	"""reactors annual costs for a given institution returned as a pandas DataFrame containing total annual costs for each reactor id
+	"""
+	db = dbopen(output_db)
+	evaler = Evaluator(db)
+	f_info = evaler.eval('Info').reset_index()
+	duration = f_info.loc[0, 'Duration']
+	initial_year = f_info.loc[0, 'InitialYear']
+	initial_month = f_info.loc[0, 'InitialMonth']
+	if os.path.isfile(xml_inputs):
+		tree = ET.parse(xml_inputs)
+		root = tree.getroot()
+		if root.find('truncation'):
+			truncation = root.find('truncation')
+			if truncation.find('simulation_begin'):
+				simulation_begin = int(truncation.find('simulation_begin').text)
+			else:
+				simulation_begin = 0
+			if truncation.find('simulation_end'):
+				simulation_end = int(truncation.find('simulation_end').text)
+			else:
+				simulation_end = duration
 	f_entry = evaler.eval('AgentEntry').reset_index()
 	f_entry = f_entry[f_entry.ParentId==institution_id]
 	f_entry = f_entry[f_entry['EnterTime'].apply(lambda x: x>simulation_begin and x<simulation_end)]
