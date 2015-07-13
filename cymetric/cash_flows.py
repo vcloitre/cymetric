@@ -173,8 +173,8 @@ def power_generated(output_db, reactor_id):
 # Institution level
     
 def institution_annual_costs(output_db, institution_id, capital=True):
-	"""reactors annual costs for a given institution returned as a pandas DataFrame containing total annual costs for each reactor id
-	"""
+    """reactors annual costs for a given institution returned as a pandas DataFrame containing total annual costs for each reactor id
+    """
     db = dbopen(output_db)
     evaler = Evaluator(db)
     f_info = evaler.eval('Info').reset_index()
