@@ -185,16 +185,16 @@ def institution_annual_costs(output_db, institution_id, capital=True):
 		print(1) # test
 		tree = ET.parse(xml_inputs)
 		root = tree.getroot()
-		if root.find('truncation'):
+		if root.find('truncation') is not None:
 			print(2) # test
 			truncation = root.find('truncation')
-			if truncation.find('simulation_begin'):
+			if truncation.find('simulation_begin') is not None:
 				print(3) # test
 				simulation_begin = int(truncation.find('simulation_begin').text)
 			else:
 				print(3.5) # test
 				simulation_begin = 0
-			if truncation.find('simulation_end'):
+			if truncation.find('simulation_end') is not None:
 				simulation_end = int(truncation.find('simulation_end').text)
 			else:
 				simulation_end = duration
