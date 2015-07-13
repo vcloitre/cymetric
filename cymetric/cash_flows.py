@@ -286,8 +286,10 @@ def institution_period_costs(output_db, institution_id, t0=0, period=20, capital
 	total['Power'] = f_power['Value']
 	total['Power2'] = pd.Series()
 	total['Payment2']= pd.Series()
-	total = pd.concat([total, pd.DataFrame(index=list(range(initial_year, initial_year + sim_duration // 12 + 1)))],axis=1)
+	total = pd.concat([total, pd.DataFrame(index=list(range(initial_year, initial_year + duration // 12 + 1)))],axis=1)
 	total = total.fillna(0)
+	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
+	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
 	for i in range(simulation_begin + t0, simulation_begin + t0 + period):	
 		total.loc[simulation_begin, 'Power2'] += total.loc[i, 'Power'] * 8760/12 / (1 + default_discount_rate) ** (i - simulation_begin)
 		total.loc[simulation_begin, 'Payment2'] += total.loc[i, 'Payment'] / (1 + default_discount_rate) ** (i - simulation_begin)
