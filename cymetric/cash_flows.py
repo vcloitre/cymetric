@@ -281,7 +281,7 @@ def institution_period_costs(output_db, institution_id, t0=0, period=20, capital
 	else:
 		total = pd.concat([f_decom, f_OM, f_fuel])
 	total = total.reset_index()
-	total['Date'] = pd.Series(total['Time']).apply(lambda x: (x + initial_month - 1) // 12 + initial_year)
+	total['Year'] = pd.Series(total['Time']).apply(lambda x: (x + initial_month - 1) // 12 + initial_year)
 	total = total.groupby('Year').sum()
 	total['Power'] = f_power['Value']
 	total['Power2'] = pd.Series()
