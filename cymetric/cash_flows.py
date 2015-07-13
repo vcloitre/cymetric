@@ -327,7 +327,7 @@ def institution_period_costs2(output_db, institution_id, t0=0, period=20, capita
 				simulation_end = int(truncation.find('simulation_end').text)
 			else:
 				simulation_end = duration
-	costs = instution_annual_costs(output_db, institution_id, capital, truncation=False)
+	costs = institution_annual_costs(output_db, institution_id, capital, truncation=False)
 	costs = costs.sum(axis=1)
 	power = institution_power_generated(output_db, institution_id, truncation=False)
 	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
