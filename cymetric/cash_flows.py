@@ -263,7 +263,7 @@ def institution_period_costs(output_db, institution_id, t0=0, period=20, capital
 	f_power = f_power[f_power['AgentId'].apply(lambda x: x in id_reactor)]
 	f_power['Year'] = pd.Series(f_power.loc[:, 'Time']).apply(lambda x: (x + initial_month - 1) // 12 + initial_year)
 	del f_power['SimId']
-	f_power = f_power.groupby('Date').sum()
+	f_power = f_power.groupby('Year').sum()
 	f_capital = evaler.eval('CapitalCost').reset_index()
 	f_capital = f_capital[f_capital['AgentId'].apply(lambda x: x in id_reactor)].set_index('Time')
 	f_capital = f_capital['Payment'] # other columns are useless
@@ -282,7 +282,7 @@ def institution_period_costs(output_db, institution_id, t0=0, period=20, capital
 		total = pd.concat([f_decom, f_OM, f_fuel])
 	total = total.reset_index()
 	total['Date'] = pd.Series(total['Time']).apply(lambda x: (x + initial_month - 1) // 12 + initial_year)
-	total = total.groupby('Date').sum()
+	total = total.groupby('Year').sum()
 	total['Power'] = f_power['Value']
 	total['Power2'] = pd.Series()
 	total['Payment2']= pd.Series()
