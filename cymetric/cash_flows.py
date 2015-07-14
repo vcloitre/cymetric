@@ -234,75 +234,6 @@ def institution_annual_costs_present_value(output_db, institution_id, capital=Tr
 	for year in df.index:
 		df.loc[year, :] = df.loc[year, :] / (1 + default_discount_rate) ** (year - df.index[0])
 	return df
-	
-def institution_period_costs(output_db, institution_id, t0=0, period=20, capital=True):
-	"""New manner to calculate price of electricity, maybe more accurate than lcoe : calculate all costs in a n years period and then determine how much the cost of electricity should be at an institutional level
-	costs used to calculate period costs at date t are [t+t0, t+t0+period]
-	"""
-	db = dbopen(output_db)
-	evaler = Evaluator(db)
-	f_info = evaler.eval('Info').reset_index()
-	duration = f_info.loc[0, 'Duration']
-	initial_year = f_info.loc[0, 'InitialYear']
-	initial_month = f_info.loc[0, 'InitialMonth']
-	if os.path.isfile(xml_inputs):
-		tree = ET.parse(xml_inputs)
-		root = tree.getroot()
-		if root.find('truncation') is not None:
-			truncation = root.find('truncation')
-			if truncation.find('simulation_begin') is not None:
-				simulation_begin = int(truncation.find('simulation_begin').text)
-			else:
-				simulation_begin = 0
-			if truncation.find('simulation_end') is not None:
-				simulation_end = int(truncation.find('simulation_end').text)
-			else:
-				simulation_end = duration
-	f_entry = evaler.eval('AgentEntry').reset_index()
-	f_entry = f_entry[f_entry.ParentId==institution_id]
-	f_entry = f_entry[f_entry['EnterTime'].apply(lambda x: x>simulation_begin and x<simulation_end)]
-	id_reactor = f_entry[f_entry['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist() # all reactor ids that belong to institution n°id
-	f_power = evaler.eval('TimeSeriesPower').reset_index()
-	f_power = f_power[f_power['AgentId'].apply(lambda x: x in id_reactor)]
-	f_power['Year'] = pd.Series(f_power.loc[:, 'Time']).apply(lambda x: (x + initial_month - 1) // 12 + initial_year)
-	del f_power['SimId']
-	f_power = f_power.groupby('Year').sum()
-	f_capital = evaler.eval('CapitalCost').reset_index()
-	f_capital = f_capital[f_capital['AgentId'].apply(lambda x: x in id_reactor)].set_index('Time')
-	f_capital = f_capital['Payment'] # other columns are useless
-	f_decom = evaler.eval('DecommissioningCost').reset_index()
-	f_decom = f_decom[f_decom['AgentId'].apply(lambda x: x in id_reactor)].set_index('Time')
-	f_decom = f_decom['Payment']
-	f_OM = evaler.eval('OperationMaintenance').reset_index()
-	f_OM = f_OM[f_OM['AgentId'].apply(lambda x: x in id_reactor)].set_index('Time')
-	f_OM = f_OM['Payment']
-	f_fuel = evaler.eval('FuelCost').reset_index()
-	f_fuel = f_fuel[f_fuel['AgentId'].apply(lambda x: x in id_reactor)].set_index('Time')
-	f_fuel = f_fuel['Payment']
-	if capital:
-		total = pd.concat([f_capital, f_decom, f_OM, f_fuel])
-	else:
-		total = pd.concat([f_decom, f_OM, f_fuel])
-	total = total.reset_index()
-	total['Year'] = pd.Series(total['Time']).apply(lambda x: (x + initial_month - 1) // 12 + initial_year)
-	total = total.groupby('Year').sum()
-	total['Power'] = f_power['Value']
-	total['Power2'] = pd.Series()
-	total['Payment2']= pd.Series()
-	total = pd.concat([total, pd.DataFrame(index=list(range(initial_year, initial_year + duration // 12 + 1)))],axis=1)
-	total = total.fillna(0)
-	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
-	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
-	for i in range(simulation_begin + t0, simulation_begin + t0 + period):	
-		total.loc[simulation_begin, 'Power2'] += total.loc[i, 'Power'] * 8760/12 / (1 + default_discount_rate) ** (i - simulation_begin)
-		total.loc[simulation_begin, 'Payment2'] += total.loc[i, 'Payment'] / (1 + default_discount_rate) ** (i - simulation_begin)
-	for j in range(simulation_begin + 1, simulation_end):
-		total.loc[j, 'Power2'] = total.loc[j - 1, 'Power2'] * (1 + default_discount_rate) - total.loc[j + t0 - 1, 'Power'] * 8760/12 * (1 + default_discount_rate) ** (1 - t0) + total.loc[j + period + t0, 'Power'] * 8760/12 / (1 + default_discount_rate) ** (period + t0)
-		total.loc[j, 'Payment2'] = total.loc[j - 1, 'Payment2'] * (1 + default_discount_rate) - total.loc[j + t0 - 1, 'Payment'] * (1 + default_discount_rate) ** (1 - t0) + total.loc[j + period + t0, 'Payment'] / (1 + default_discount_rate) ** (period + t0)
-			#tmp['WasteManagement'][j] = pd.Series()
-	rtn = pd.DataFrame({'Costs (billion $)' : total['Payment2'] / 10 ** 9,  'Power (MWh)' : total['Power2'], 'Ratio' : total['Payment2'] / total['Power2']})
-	rtn.index.name = 'Time'
-	return rtn
 		
 def institution_period_costs2(output_db, institution_id, t0=0, period=20, capital=True):
 	"""New manner to calculate price of electricity, maybe more accurate than lcoe : calculate all costs in a n years period and then determine how much the cost of electricity should be at an institutional level
@@ -330,13 +261,10 @@ def institution_period_costs2(output_db, institution_id, t0=0, period=20, capita
 	costs = institution_annual_costs(output_db, institution_id, capital, truncation=False)
 	costs = costs.sum(axis=1)
 	power = institution_power_generated(output_db, institution_id, truncation=False)
-	print(costs) # test
-	print(power) # test
 	df = pd.DataFrame(index=list(range(initial_year, initial_year + duration // 12 + 1)))
 	df['Power'] = power
 	df['Costs'] = costs
 	df = df.fillna(0)
-	print(df) # test
 	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
 	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
 	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end)))
@@ -378,13 +306,10 @@ def institution_period_costs3(output_db, institution_id, t0=0, period=20, capita
 	costs = institution_annual_costs(output_db, institution_id, capital, truncation=False)
 	costs = costs.sum(axis=1)
 	power = institution_power_generated(output_db, institution_id, truncation=False)
-	print(costs) # test
-	print(power) # test
 	df = pd.DataFrame(index=list(range(initial_year, initial_year + duration // 12 + 1)))
 	df['Power'] = power
 	df['Costs'] = costs
 	df = df.fillna(0)
-	print(df) # test
 	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
 	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
 	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end + 1)))
