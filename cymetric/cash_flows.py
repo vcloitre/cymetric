@@ -330,17 +330,21 @@ def institution_period_costs2(output_db, institution_id, t0=0, period=20, capita
 	costs = institution_annual_costs(output_db, institution_id, capital, truncation=False)
 	costs = costs.sum(axis=1)
 	power = institution_power_generated(output_db, institution_id, truncation=False)
+	df = pd.DataFrame(index=list(range(initial_year, initial_year + duration // 12 + 1)))
+	df['Power'] = power
+	df['Costs'] = costs
+	df = df.fillna(0)
 	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
 	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
 	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end)))
 	rtn['Power'] = pd.Series()
 	rtn['Payment'] = pd.Series()
 	for i in range(simulation_begin + t0, simulation_begin + t0 + period):	
-		rtn.loc[simulation_begin, 'Power'] += power[i] / (1 + default_discount_rate) ** (i - simulation_begin)
-		rtn.loc[simulation_begin, 'Payment'] += costs[i] / (1 + default_discount_rate) ** (i - simulation_begin)
+		rtn.loc[simulation_begin, 'Power'] += df.loc[i, 'Power'] / (1 + default_discount_rate) ** (i - simulation_begin)
+		rtn.loc[simulation_begin, 'Payment'] += df.loc[i, 'Costs'] / (1 + default_discount_rate) ** (i - simulation_begin)
 	for j in range(simulation_begin + 1, simulation_end + 1):
-		rtn.loc[j, 'Power'] = rtn.loc[j - 1, 'Power'] * (1 + default_discount_rate) - power[j + t0] * (1 + default_discount_rate) ** (1 - t0) + power[j + 1 + period + t0] / (1 + default_discount_rate) ** (period + t0)
-		rtn.loc[j, 'Payment'] = rtn.loc[j - 1, 'Payment'] * (1 + default_discount_rate) - costs[j + t0] * (1 + default_discount_rate) ** (1 - t0) + costs[j + 1 + period + t0] / (1 + default_discount_rate) ** (period + t0)
+		rtn.loc[j, 'Power'] = rtn.loc[j - 1, 'Power'] * (1 + default_discount_rate) - df.loc[j + t0, 'Power'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j + 1 + period + t0, 'Power'] / (1 + default_discount_rate) ** (period + t0)
+		rtn.loc[j, 'Payment'] = rtn.loc[j - 1, 'Payment'] * (1 + default_discount_rate) - df.loc[j + t0, 'Costs'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j + 1 + period + t0, 'Costs'] / (1 + default_discount_rate) ** (period + t0)
 			#tmp['WasteManagement'][j] = pd.Series()
 	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
 	return rtn

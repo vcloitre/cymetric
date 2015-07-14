@@ -124,6 +124,9 @@ dct_fuel = {'Natural Uranium ($/kgHM)' : 80, 'Depleted Uranium ($/kgHM)' : 10, '
 # construction of reprocessing facilities, SNF encapsulation and final 
 # disposal" (d'Haeseleer)
 
+default_fuel_price = 2500 # $/kg, when institution doesn't generate power
+
+
 ######################
 # Capital costs data #
 ######################
