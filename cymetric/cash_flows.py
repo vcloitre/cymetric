@@ -387,7 +387,7 @@ def institution_period_costs3(output_db, institution_id, t0=0, period=20, capita
 	print(df) # test
 	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
 	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
-	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end)))
+	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end + 1)))
 	rtn['Power'] = pd.Series()
 	rtn['Payment'] = pd.Series()
 	rtn = rtn.fillna(0)
