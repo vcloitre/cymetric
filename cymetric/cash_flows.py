@@ -342,6 +342,7 @@ def institution_period_costs2(output_db, institution_id, t0=0, period=20, capita
 	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end)))
 	rtn['Power'] = pd.Series()
 	rtn['Payment'] = pd.Series()
+	rtn = rtn.fillna(0)
 	for i in range(simulation_begin + t0, simulation_begin + t0 + period):	
 		rtn.loc[simulation_begin, 'Power'] += df.loc[i, 'Power'] / (1 + default_discount_rate) ** (i - simulation_begin)
 		rtn.loc[simulation_begin, 'Payment'] += df.loc[i, 'Costs'] / (1 + default_discount_rate) ** (i - simulation_begin)
