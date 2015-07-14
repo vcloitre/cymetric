@@ -352,6 +352,52 @@ def institution_period_costs2(output_db, institution_id, t0=0, period=20, capita
 			#tmp['WasteManagement'][j] = pd.Series()
 	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
 	return rtn
+	
+def institution_period_costs3(output_db, institution_id, t0=0, period=20, capital=True):
+	"""Just for tests : slower but more secure
+	"""
+	db = dbopen(output_db)
+	evaler = Evaluator(db)
+	f_info = evaler.eval('Info').reset_index()
+	duration = f_info.loc[0, 'Duration']
+	initial_year = f_info.loc[0, 'InitialYear']
+	initial_month = f_info.loc[0, 'InitialMonth']
+	if os.path.isfile(xml_inputs):
+		tree = ET.parse(xml_inputs)
+		root = tree.getroot()
+		if root.find('truncation') is not None:
+			truncation = root.find('truncation')
+			if truncation.find('simulation_begin') is not None:
+				simulation_begin = int(truncation.find('simulation_begin').text)
+			else:
+				simulation_begin = 0
+			if truncation.find('simulation_end') is not None:
+				simulation_end = int(truncation.find('simulation_end').text)
+			else:
+				simulation_end = duration
+	costs = institution_annual_costs(output_db, institution_id, capital, truncation=False)
+	costs = costs.sum(axis=1)
+	power = institution_power_generated(output_db, institution_id, truncation=False)
+	print(costs) # test
+	print(power) # test
+	df = pd.DataFrame(index=list(range(initial_year, initial_year + duration // 12 + 1)))
+	df['Power'] = power
+	df['Costs'] = costs
+	df = df.fillna(0)
+	print(df) # test
+	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
+	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
+	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end)))
+	rtn['Power'] = pd.Series()
+	rtn['Payment'] = pd.Series()
+	rtn = rtn.fillna(0)
+	for j in range(simulation_begin, simulation_end + 1):
+		for i in range(j + t0, j + t0 + period):
+			rtn.loc[j, 'Power'] += df.loc[i, 'Power'] / (1 + default_discount_rate) ** (i - j)
+			rtn.loc[j, 'Payment'] += df.loc[i, 'Costs'] / (1 + default_discount_rate) ** (i - j)
+			#tmp['WasteManagement'][j] = pd.Series()
+	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
+	return rtn
 		
 def institution_power_generated(output_db, institution_id, truncation=True):
 	"""
