@@ -172,7 +172,7 @@ def power_generated(output_db, reactor_id):
    
 # Institution level
     
-def institution_annual_costs(output_db, institution_id, capital=True, truncation=True):
+def institution_annual_costs(output_db, institution_id, capital=True, truncate=True):
 	"""reactors annual costs for a given institution returned as a pandas DataFrame containing total annual costs for each reactor id
 	"""
 	db = dbopen(output_db)
@@ -219,7 +219,7 @@ def institution_annual_costs(output_db, institution_id, capital=True, truncation
 	costs['Fuel'] = f_fuel['Payment']
 	costs = costs.fillna(0)
 	costs['Year'] = (costs.index + initial_month - 1) // 12 + initial_year
-	if truncation:
+	if truncate:
 		end_year = (simulation_end + initial_month - 1) // 12 + initial_year
 		costs = costs[costs['Year'].apply(lambda x : x <= end_year)]
 		begin_year = (simulation_begin + initial_month - 1) // 12 + initial_year
@@ -229,7 +229,7 @@ def institution_annual_costs(output_db, institution_id, capital=True, truncation
 	costs = costs.groupby('Year').sum()
 	return costs
 		
-def institution_annual_costs_present_value(output_db, institution_id, capital=True, truncation=True):
+def institution_annual_costs_present_value(output_db, institution_id, capital=True, truncate=True):
 	df = institution_annual_costs(output_db, institution_id, capital)
 	for year in df.index:
 		df.loc[year, :] = df.loc[year, :] / (1 + default_discount_rate) ** (year - df.index[0])
@@ -258,9 +258,9 @@ def institution_period_costs(output_db, institution_id, t0=0, period=20, capital
 				simulation_end = int(truncation.find('simulation_end').text)
 			else:
 				simulation_end = duration
-	costs = institution_annual_costs(output_db, institution_id, capital, truncation=False)
+	costs = institution_annual_costs(output_db, institution_id, capital, truncate=False)
 	costs = costs.sum(axis=1)
-	power = institution_power_generated(output_db, institution_id, truncation=False)
+	power = institution_power_generated(output_db, institution_id, truncate=False)
 	df = pd.DataFrame(index=list(range(initial_year, initial_year + duration // 12 + 1)))
 	df['Power'] = power
 	df['Costs'] = costs
@@ -303,9 +303,9 @@ def institution_period_costs2(output_db, institution_id, t0=0, period=20, capita
 				simulation_end = int(truncation.find('simulation_end').text)
 			else:
 				simulation_end = duration
-	costs = institution_annual_costs(output_db, institution_id, capital, truncation=False)
+	costs = institution_annual_costs(output_db, institution_id, capital, truncate=False)
 	costs = costs.sum(axis=1)
-	power = institution_power_generated(output_db, institution_id, truncation=False)
+	power = institution_power_generated(output_db, institution_id, truncate=False)
 	df = pd.DataFrame(index=list(range(initial_year, initial_year + duration // 12 + 1)))
 	df['Power'] = power
 	df['Costs'] = costs
@@ -324,7 +324,7 @@ def institution_period_costs2(output_db, institution_id, t0=0, period=20, capita
 	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
 	return rtn
 		
-def institution_power_generated(output_db, institution_id, truncation=True):
+def institution_power_generated(output_db, institution_id, truncate=True):
 	"""
 	"""
 	db = dbopen(output_db)
@@ -380,7 +380,7 @@ def institution_lcoe(output_db, institution_id):
 				simulation_end = int(truncation.find('simulation_end').text)
 			else:
 				simulation_end = duration
-	costs = institution_annual_costs(output_db, institution_id, truncation=False)
+	costs = institution_annual_costs(output_db, institution_id, truncate=False)
 	costs['TotalCosts'] = costs.sum(axis=1)
 	commissioning = costs['Capital'].idxmax()
 	costs['Power'] = institution_power_generated(output_db, institution_id)
