@@ -704,6 +704,261 @@ def region_average_lcoe(output_db, region_id):
 	
 # Simulation level
 
+def simulation_annual_costs(output_db, capital=True, truncate=True):
+	"""reactors annual costs for a given institution returned as a pandas DataFrame containing total annual costs for each reactor id
+	"""
+	db = dbopen(output_db)
+	evaler = Evaluator(db)
+	f_info = evaler.eval('Info').reset_index()
+	duration = f_info.loc[0, 'Duration']
+	initial_year = f_info.loc[0, 'InitialYear']
+	initial_month = f_info.loc[0, 'InitialMonth']
+	if os.path.isfile(xml_inputs):
+		tree = ET.parse(xml_inputs)
+		root = tree.getroot()
+		if root.find('truncation') is not None:
+			truncation = root.find('truncation')
+			if truncation.find('simulation_begin') is not None:
+				simulation_begin = int(truncation.find('simulation_begin').text)
+			else:
+				simulation_begin = 0
+			if truncation.find('simulation_end') is not None:
+				simulation_end = int(truncation.find('simulation_end').text)
+			else:
+				simulation_end = duration
+	f_entry = evaler.eval('AgentEntry').reset_index()
+	f_entry = f_entry[f_entry['EnterTime'].apply(lambda x: x>simulation_begin and x<simulation_end)]
+	id_reactor = f_entry[f_entry['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist()
+	f_capital = evaler.eval('CapitalCost').reset_index()
+	f_capital = f_capital[f_capital['AgentId'].apply(lambda x: x in id_reactor)]
+	mini = min(f_capital['Time'])
+	f_capital = f_capital.groupby('Time').sum()
+	costs = pd.DataFrame({'Capital' : f_capital['Payment']}, index=list(range(mini, duration)))
+	f_decom = evaler.eval('DecommissioningCost').reset_index()
+	if not f_decom.empty:
+		f_decom = f_decom[f_decom['AgentId'].apply(lambda x: x in id_reactor)]
+		f_decom = f_decom.groupby('Time').sum()
+		costs['Decommissioning'] = f_decom['Payment']
+	f_OM = evaler.eval('OperationMaintenance').reset_index()
+	f_OM = f_OM[f_OM['AgentId'].apply(lambda x: x in id_reactor)]
+	f_OM = f_OM.groupby('Time').sum()
+	costs['OandM'] = f_OM['Payment']
+	waste_disposal = 1
+	f_fuel = evaler.eval('FuelCost').reset_index()
+	f_fuel = f_fuel[f_fuel['AgentId'].apply(lambda x: x in id_reactor)]
+	f_fuel = f_fuel.groupby('Time').sum()
+	costs['Fuel'] = f_fuel['Payment']
+	costs = costs.fillna(0)
+	costs['Year'] = (costs.index + initial_month - 1) // 12 + initial_year
+	if truncate:
+		end_year = (simulation_end + initial_month - 1) // 12 + initial_year
+		costs = costs[costs['Year'].apply(lambda x : x <= end_year)]
+		begin_year = (simulation_begin + initial_month - 1) // 12 + initial_year
+		costs = costs[costs['Year'].apply(lambda x : x >= begin_year)]
+	if not capital:
+		del costs['Capital']
+	costs = costs.groupby('Year').sum()
+	return costs
+		
+def simulation_annual_costs_present_value(output_db, capital=True, truncate=True):
+	df = simulation_annual_costs(output_db, capital)
+	for year in df.index:
+		df.loc[year, :] = df.loc[year, :] / (1 + default_discount_rate) ** (year - df.index[0])
+	return df
+		
+def simulation_period_costs(output_db, t0=0, period=20, capital=True):
+	"""New manner to calculate price of electricity, maybe more accurate than lcoe : calculate all costs in a n years period and then determine how much the cost of electricity should be at an institutional level
+	costs used to calculate period costs at date t are [t+t0, t+t0+period]
+	"""
+	db = dbopen(output_db)
+	evaler = Evaluator(db)
+	f_info = evaler.eval('Info').reset_index()
+	duration = f_info.loc[0, 'Duration']
+	initial_year = f_info.loc[0, 'InitialYear']
+	initial_month = f_info.loc[0, 'InitialMonth']
+	if os.path.isfile(xml_inputs):
+		tree = ET.parse(xml_inputs)
+		root = tree.getroot()
+		if root.find('truncation') is not None:
+			truncation = root.find('truncation')
+			if truncation.find('simulation_begin') is not None:
+				simulation_begin = int(truncation.find('simulation_begin').text)
+			else:
+				simulation_begin = 0
+			if truncation.find('simulation_end') is not None:
+				simulation_end = int(truncation.find('simulation_end').text)
+			else:
+				simulation_end = duration
+	costs = simulation_annual_costs(output_db, capital, truncate=False)
+	costs = costs.sum(axis=1)
+	power = simulation_power_generated(output_db, truncate=False)
+	df = pd.DataFrame(index=list(range(initial_year, initial_year + duration // 12 + 1)))
+	df['Power'] = power
+	df['Costs'] = costs
+	df = df.fillna(0)
+	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
+	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
+	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end)))
+	rtn['Power'] = pd.Series()
+	rtn['Payment'] = pd.Series()
+	rtn = rtn.fillna(0)
+	for i in range(simulation_begin + t0, simulation_begin + t0 + period):	
+		rtn.loc[simulation_begin, 'Power'] += df.loc[i, 'Power'] / (1 + default_discount_rate) ** (i - simulation_begin)
+		rtn.loc[simulation_begin, 'Payment'] += df.loc[i, 'Costs'] / (1 + default_discount_rate) ** (i - simulation_begin)
+	for j in range(simulation_begin + 1, simulation_end + 1):
+		rtn.loc[j, 'Power'] = rtn.loc[j - 1, 'Power'] * (1 + default_discount_rate) - df.loc[j -1 + t0, 'Power'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j - 1 + period + t0, 'Power'] / (1 + default_discount_rate) ** (period + t0 - 1)
+		rtn.loc[j, 'Payment'] = rtn.loc[j - 1, 'Payment'] * (1 + default_discount_rate) - df.loc[j - 1 + t0, 'Costs'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j - 1 + period + t0, 'Costs'] / (1 + default_discount_rate) ** (period + t0 - 1)
+			#tmp['WasteManagement'][j] = pd.Series()
+	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
+	return rtn
+	
+def simulation_period_costs2(output_db, t0=0, period=20, capital=True):
+	"""Just for tests : slower but more secure
+	"""
+	db = dbopen(output_db)
+	evaler = Evaluator(db)
+	f_info = evaler.eval('Info').reset_index()
+	duration = f_info.loc[0, 'Duration']
+	initial_year = f_info.loc[0, 'InitialYear']
+	initial_month = f_info.loc[0, 'InitialMonth']
+	if os.path.isfile(xml_inputs):
+		tree = ET.parse(xml_inputs)
+		root = tree.getroot()
+		if root.find('truncation') is not None:
+			truncation = root.find('truncation')
+			if truncation.find('simulation_begin') is not None:
+				simulation_begin = int(truncation.find('simulation_begin').text)
+			else:
+				simulation_begin = 0
+			if truncation.find('simulation_end') is not None:
+				simulation_end = int(truncation.find('simulation_end').text)
+			else:
+				simulation_end = duration
+	costs = simulation_annual_costs(output_db, capital, truncate=False)
+	costs = costs.sum(axis=1)
+	power = simulation_power_generated(output_db, truncate=False)
+	df = pd.DataFrame(index=list(range(initial_year, initial_year + duration // 12 + 1)))
+	df['Power'] = power
+	df['Costs'] = costs
+	df = df.fillna(0)
+	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
+	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
+	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end + 1)))
+	rtn['Power'] = pd.Series()
+	rtn['Payment'] = pd.Series()
+	rtn = rtn.fillna(0)
+	for j in range(simulation_begin, simulation_end + 1):
+		for i in range(j + t0, j + t0 + period):
+			rtn.loc[j, 'Power'] += df.loc[i, 'Power'] / (1 + default_discount_rate) ** (i - j)
+			rtn.loc[j, 'Payment'] += df.loc[i, 'Costs'] / (1 + default_discount_rate) ** (i - j)
+			#tmp['WasteManagement'][j] = pd.Series()
+	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
+	return rtn
+		
+def simulation_power_generated(output_db, truncate=True):
+	"""
+	"""
+	db = dbopen(output_db)
+	evaler = Evaluator(db)
+	f_info = evaler.eval('Info').reset_index()
+	duration = f_info.loc[0, 'Duration']
+	initial_year = f_info.loc[0, 'InitialYear']
+	initial_month = f_info.loc[0, 'InitialMonth']
+	if os.path.isfile(xml_inputs):
+		tree = ET.parse(xml_inputs)
+		root = tree.getroot()
+		if root.find('truncation') is not None:
+			truncation = root.find('truncation')
+			if truncation.find('simulation_begin') is not None:
+				simulation_begin = int(truncation.find('simulation_begin').text)
+			else:
+				simulation_begin = 0
+			if truncation.find('simulation_end') is not None:
+				simulation_end = int(truncation.find('simulation_end').text)
+			else:
+				simulation_end = duration
+	f_entry = evaler.eval('AgentEntry').reset_index()
+	f_entry = f_entry[f_entry['EnterTime'].apply(lambda x: x>simulation_begin and x<simulation_end)]
+	id_reactor = f_entry[f_entry['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist()
+	f_power = evaler.eval('TimeSeriesPower').reset_index()
+	f_power = f_power[f_power['AgentId'].apply(lambda x: x in id_reactor)]
+	f_power['Year'] = (f_power['Time'] + initial_month - 1) // 12 + initial_year
+	f_power = f_power.groupby('Year').sum()
+	rtn = f_power['Value'] * 8760 / 12
+	rtn.name = 'Power in MWh'
+	return rtn
+
+def simulation_lcoe(output_db):
+	"""
+	"""
+	db = dbopen(output_db)
+	evaler = Evaluator(db)
+	f_info = evaler.eval('Info').reset_index()
+	duration = f_info.loc[0, 'Duration']
+	initial_year = f_info.loc[0, 'InitialYear']
+	initial_month = f_info.loc[0, 'InitialMonth']
+	if os.path.isfile(xml_inputs):
+		tree = ET.parse(xml_inputs)
+		root = tree.getroot()
+		if root.find('truncation') is not None:
+			truncation = root.find('truncation')
+			if truncation.find('simulation_begin') is not None:
+				simulation_begin = int(truncation.find('simulation_begin').text)
+			else:
+				simulation_begin = 0
+			if truncation.find('simulation_end') is not None:
+				simulation_end = int(truncation.find('simulation_end').text)
+			else:
+				simulation_end = duration
+	costs = simulation_annual_costs(output_db, truncate=False)
+	costs['TotalCosts'] = costs.sum(axis=1)
+	commissioning = costs['Capital'].idxmax()
+	costs['Power'] = simulation_power_generated(output_db)
+	costs = costs.fillna(0)
+	power_generated = 0
+	total_costs = 0
+	for i in costs.index:
+		power_generated += costs['Power'][i] / ((1 + default_discount_rate) ** (i - commissioning))
+		total_costs += costs['TotalCosts'][i] / ((1 + default_discount_rate) ** (i - commissioning))
+	return total_costs / power_generated
+
+def simulation_average_lcoe(output_db):
+	"""Time dependent lcoe
+	"""
+	db = dbopen(output_db)
+	evaler = Evaluator(db)
+	f_info = evaler.eval('Info').reset_index()
+	duration = f_info.loc[0, 'Duration']
+	initial_year = f_info.loc[0, 'InitialYear']
+	initial_month = f_info.loc[0, 'InitialMonth']
+	if os.path.isfile(xml_inputs):
+		tree = ET.parse(xml_inputs)
+		root = tree.getroot()
+		if root.find('truncation') is not None:
+			truncation = root.find('truncation')
+			if truncation.find('simulation_begin') is not None:
+				simulation_begin = int(truncation.find('simulation_begin').text)
+			else:
+				simulation_begin = 0
+			if truncation.find('simulation_end') is not None:
+				simulation_end = int(truncation.find('simulation_end').text)
+			else:
+				simulation_end = duration
+	f_entry = evaler.eval('AgentEntry').reset_index()
+	f_entry = f_entry[f_entry['EnterTime'].apply(lambda x: x>simulation_begin and x<simulation_end)]
+	id_reactor = f_entry[f_entry['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist()
+	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
+	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
+	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end + 1)))
+	for id in id_reactor:
+		tmp = lcoe(output_db, id)
+		commissioning = f_entry[f_entry.AgentId==id]['EnterTime'].iloc[0]
+		lifetime = f_entry[f_entry.AgentId==id]['Lifetime'].iloc[0]
+		decommissioning = (commissioning + lifetime + initial_month - 1) // 12 + initial_year
+		commissioning = (commissioning + initial_month - 1) // 12 + initial_year
+		rtn[id] = pd.Series(tmp, index=list(range(commissioning, decommissioning + 1)))
+	return rtn.mean(axis=1).fillna(0)
+
 ###########################
 # Plotting costs #
 ###########################
