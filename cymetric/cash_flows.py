@@ -418,18 +418,15 @@ def institution_average_lcoe(output_db, institution_id):
 	f_entry = f_entry[f_entry.ParentId==institution_id]
 	f_entry = f_entry[f_entry['EnterTime'].apply(lambda x: x>simulation_begin and x<simulation_end)]
 	id_reactor = f_entry[f_entry['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist()
-	print(id_reactor) # test
 	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
 	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
 	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end + 1)))
-	print(rtn) # test
 	for id in id_reactor:
 		tmp = lcoe(output_db, id)
-		print(tmp) # test
 		commissioning = f_entry[f_entry.AgentId==id]['EnterTime'].iloc[0]
-		commissioning = (commissioning + initial_month - 1) // 12 + initial_year
 		lifetime = f_entry[f_entry.AgentId==id]['Lifetime'].iloc[0]
-		decommissioning = commissioning + lifetime // 12
+		decommissioning = (commissioning + lifetime + initial_month - 1) // 12 + initial_year
+		commissioning = (commissioning + initial_month - 1) // 12 + initial_year
 		rtn[id] = pd.Series(tmp, index=list(range(commissioning, decommissioning + 1)))
 	return rtn.mean(axis=1).fillna(0)
 	
