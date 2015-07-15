@@ -390,7 +390,46 @@ def institution_lcoe(output_db, institution_id):
 	for i in costs.index:
 		power_generated += costs['Power'][i] / ((1 + default_discount_rate) ** (i - commissioning))
 		total_costs += costs['TotalCosts'][i] / ((1 + default_discount_rate) ** (i - commissioning))
-	return total_costs / power_generated 
+	return total_costs / power_generated
+
+def institution_average_lcoe(output_db, institution_id):
+	"""Time dependent lcoe
+	"""
+	db = dbopen(output_db)
+	evaler = Evaluator(db)
+	f_info = evaler.eval('Info').reset_index()
+	duration = f_info.loc[0, 'Duration']
+	initial_year = f_info.loc[0, 'InitialYear']
+	initial_month = f_info.loc[0, 'InitialMonth']
+	if os.path.isfile(xml_inputs):
+		tree = ET.parse(xml_inputs)
+		root = tree.getroot()
+		if root.find('truncation') is not None:
+			truncation = root.find('truncation')
+			if truncation.find('simulation_begin') is not None:
+				simulation_begin = int(truncation.find('simulation_begin').text)
+			else:
+				simulation_begin = 0
+			if truncation.find('simulation_end') is not None:
+				simulation_end = int(truncation.find('simulation_end').text)
+			else:
+				simulation_end = duration
+	f_entry = evaler.eval('AgentEntry').reset_index()
+	f_entry = f_entry[f_entry.ParentId==institution_id]
+	f_entry = f_entry[f_entry['EnterTime'].apply(lambda x: x>simulation_begin and x<simulation_end)]
+	id_reactor = f_entry[f_entry['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist()
+	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
+	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
+	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end)))
+	for id in id_reactor:
+		tmp = lcoe(output_db, id)
+		commissioning = f_entry[f_entry.AgentId==id]['EnterTime'].iloc[0]
+		lifetime = f_entry[f_entry.AgentId==id]['Lifetime'].iloc[0]
+		decommissioning = commissioning + lifetime // 12
+		rtn[id] = pd.Series(tmp, index=list(range(commissioning, decommissioning)))
+	return rtn.mean(axis=1).fillna(0)
+	
+		
 		
 # Region level
 		
