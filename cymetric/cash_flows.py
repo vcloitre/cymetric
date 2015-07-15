@@ -418,7 +418,7 @@ def institution_average_lcoe(output_db, institution_id):
 	f_entry = f_entry[f_entry.ParentId==institution_id]
 	f_entry = f_entry[f_entry['EnterTime'].apply(lambda x: x>simulation_begin and x<simulation_end)]
 	id_reactor = f_entry[f_entry['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist()
-	print(id_reacor) # test
+	print(id_reactor) # test
 	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
 	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
 	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end + 1)))
