@@ -380,7 +380,7 @@ def institution_lcoe(output_db, institution_id):
 				simulation_end = int(truncation.find('simulation_end').text)
 			else:
 				simulation_end = duration
-	costs = institution_annual_costs(output_db, institution_id, truncate=False)
+	costs = institution_annual_costs(output_db, institution_id, truncation=False)
 	costs['TotalCosts'] = costs.sum(axis=1)
 	commissioning = costs['Capital'].idxmax()
 	costs['Power'] = institution_power_generated(output_db, institution_id)
