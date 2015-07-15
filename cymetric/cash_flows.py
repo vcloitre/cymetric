@@ -235,7 +235,7 @@ def institution_annual_costs_present_value(output_db, institution_id, capital=Tr
 		df.loc[year, :] = df.loc[year, :] / (1 + default_discount_rate) ** (year - df.index[0])
 	return df
 		
-def institution_period_costs2(output_db, institution_id, t0=0, period=20, capital=True):
+def institution_period_costs(output_db, institution_id, t0=0, period=20, capital=True):
 	"""New manner to calculate price of electricity, maybe more accurate than lcoe : calculate all costs in a n years period and then determine how much the cost of electricity should be at an institutional level
 	costs used to calculate period costs at date t are [t+t0, t+t0+period]
 	"""
@@ -281,7 +281,7 @@ def institution_period_costs2(output_db, institution_id, t0=0, period=20, capita
 	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
 	return rtn
 	
-def institution_period_costs3(output_db, institution_id, t0=0, period=20, capital=True):
+def institution_period_costs2(output_db, institution_id, t0=0, period=20, capital=True):
 	"""Just for tests : slower but more secure
 	"""
 	db = dbopen(output_db)
@@ -358,6 +358,39 @@ def institution_power_generated(output_db, institution_id, truncation=True):
 	rtn.name = 'Power in MWh'
 	return rtn
 
+def institution_lcoe(output_db, institution_id):
+	"""
+	"""
+	db = dbopen(output_db)
+	evaler = Evaluator(db)
+	f_info = evaler.eval('Info').reset_index()
+	duration = f_info.loc[0, 'Duration']
+	initial_year = f_info.loc[0, 'InitialYear']
+	initial_month = f_info.loc[0, 'InitialMonth']
+	if os.path.isfile(xml_inputs):
+		tree = ET.parse(xml_inputs)
+		root = tree.getroot()
+		if root.find('truncation') is not None:
+			truncation = root.find('truncation')
+			if truncation.find('simulation_begin') is not None:
+				simulation_begin = int(truncation.find('simulation_begin').text)
+			else:
+				simulation_begin = 0
+			if truncation.find('simulation_end') is not None:
+				simulation_end = int(truncation.find('simulation_end').text)
+			else:
+				simulation_end = duration
+	costs = annual_costs(output_db, institution_id, truncate=False)
+	costs['TotalCosts'] = costs.sum(axis=1)
+	commissioning = costs['Capital'].idxmax()
+	costs['Power'] = institution_power_generated(output_db, institution_id)
+	costs = costs.fillna(0)
+	power_generated = 0
+	total_costs = 0
+	for i in costs.index:
+		power_generated += costs['Power'][i] / ((1 + default_discount_rate) ** (i - commissioning))
+		total_costs += costs['TotalCosts'][i] / ((1 + default_discount_rate) ** (i - commissioning))
+	return total_costs / power_generated 
 		
 # Region level
 		
