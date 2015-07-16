@@ -87,7 +87,7 @@ def accumulate_capital(output_db, reactor_id):
 	power_gen = power_generated(output_db, reactor_id) * lcoe(output_db, reactor_id)
 	rtn = pd.concat([costs, power_gen], axis=1).fillna(0)
 	rtn['Capital'] = rtn[0] + rtn[1]
-	return
+	return rtn
     
 def lcoe(output_db, reactor_id, capital=True):
 	"""More efficient than lcoe (~15% faster) and easier to understand
