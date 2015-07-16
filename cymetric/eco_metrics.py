@@ -324,7 +324,8 @@ def decommissioning_cost(series):
     f_entry = series[1].reset_index()
     f_info = series[2].reset_index()
     sim_duration = f_info['Duration'].iloc[0]
-    id_reactors = f_entry[f_entry.Spec==":cycamore:Reactor"]["AgentId"].tolist()
+    f_entry = f_entry[(f_entry['EnterTime'] + f_entry['Lifetime']).apply(lambda x: x < sim_duration)] # only reactors that will be decommissioned
+    id_reactors = f_entry[f_entry['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist()
     rtn = pd.DataFrame()
     for i in id_reactors:
         s_cost = capital_shape(duration // 2, duration-1, 'triangle')
