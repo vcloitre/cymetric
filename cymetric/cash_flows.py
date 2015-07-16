@@ -80,6 +80,15 @@ def average_cost(output_db, reactor_id, capital=True):
     power_generated = sum(f_power[f_power.AgentId==reactor_id]['Value']) * 8760 / 12
     return annual_costs(output_db, reactor_id, capital).sum().sum() / power_generated
     
+def accumulate_capital(output_db, reactor_id):
+	"""-expenditures + income
+	"""
+	costs = - annual_costs(output_db, reactor_id).sum(axis=1)
+	power_gen = power_generated(output_db, reactor_id) * lcoe(output_db, reactor_id)
+	rtn = pd.concat([costs, power_gen], axis=1).fillna(0)
+	rtn['Capital'] = rtn[0] + rtn[1]
+	return
+    
 def lcoe(output_db, reactor_id, capital=True):
 	"""More efficient than lcoe (~15% faster) and easier to understand
 	"""
