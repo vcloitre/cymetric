@@ -243,6 +243,15 @@ def institution_annual_costs_present_value(output_db, institution_id, capital=Tr
 	for year in df.index:
 		df.loc[year, :] = df.loc[year, :] / (1 + default_discount_rate) ** (year - df.index[0])
 	return df
+	
+def institution_accumulate_capital(output_db, institution_id):
+	"""-expenditures + income
+	"""
+	costs = - institution_annual_costs(output_db, institution_id).sum(axis=1)
+	power_gen = power_generated(output_db, institution_id) * institution_average_lcoe(output_db, institution_id)
+	rtn = pd.concat([costs, power_gen], axis=1).fillna(0)
+	rtn['Capital'] = rtn[0] + rtn[1]
+	return rtn
 		
 def institution_period_costs(output_db, institution_id, t0=0, period=20, capital=True):
 	"""New manner to calculate price of electricity, maybe more accurate than lcoe : calculate all costs in a n years period and then determine how much the cost of electricity should be at an institutional level
@@ -401,6 +410,7 @@ def institution_lcoe(output_db, institution_id):
 		total_costs += costs['TotalCosts'][i] / ((1 + default_discount_rate) ** (i - commissioning))
 	return total_costs / power_generated
 
+# moy à ponderer par la puissance
 def institution_average_lcoe(output_db, institution_id):
 	"""Time dependent lcoe
 	"""
@@ -507,6 +517,15 @@ def region_annual_costs_present_value(output_db, region_id, capital=True, trunca
 	for year in df.index:
 		df.loc[year, :] = df.loc[year, :] / (1 + default_discount_rate) ** (year - df.index[0])
 	return df
+		
+def region_accumulate_capital(output_db, region_id):
+	"""-expenditures + income
+	"""
+	costs = - region_annual_costs(output_db, region_id).sum(axis=1)
+	power_gen = region_power_generated(output_db, region_id) * region_average_lcoe(output_db, region_id)
+	rtn = pd.concat([costs, power_gen], axis=1).fillna(0)
+	rtn['Capital'] = rtn[0] + rtn[1]
+	return rtn
 		
 def region_period_costs(output_db, region_id, t0=0, period=20, capital=True):
 	"""New manner to calculate price of electricity, maybe more accurate than lcoe : calculate all costs in a n years period and then determine how much the cost of electricity should be at an institutional level
