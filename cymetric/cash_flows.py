@@ -7,13 +7,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from cymetric.tools import dbopen
 from cymetric.evaluator import Evaluator
-from cymetric.eco_inputs import default_cap_overnight, default_discount_rate, default_fuel_price
+from cymetric.eco_inputs import default_cap_overnight, default_discount_rate, default_fuel_price, actualization_vector
 import warnings
 import os
 import xml.etree.ElementTree as ET
 
 xml_inputs = 'parameters.xml' # temporary solution : always store an xml file in your working directory that you will have to use. This file have to be known
-
         
 ####################################################################
 # Calculation of average, annual and levalized cost of electricity #
@@ -61,14 +60,8 @@ def annual_costs(output_db, reactor_id, capital=True):
 def annual_costs_present_value(output_db, reactor_id, capital=True):
 	"""Same as annual_cost except all values are actualized to the begin date of the SIMULATION
 	"""
-	db = dbopen(output_db)
-	evaler = Evaluator(db)
-	f_info = evaler.eval('Info').reset_index()
-	initial_year = f_info.loc[0, 'InitialYear']
 	costs = annual_costs(output_db, reactor_id, capital)
-	for i in costs.index:
-		costs[costs.index==i] = costs[costs.index==i] / ((1 + default_discount_rate) ** (i - initial_year))
-	return costs
+	return costs.apply(lambda(x : x * actualization_vector(len(costs))))
    
 def average_cost(output_db, reactor_id, capital=True):
     """Given a reactor's AgentId, gather all annual costs and average it over
@@ -86,7 +79,8 @@ def accumulate_capital(output_db, reactor_id):
 	costs = - annual_costs(output_db, reactor_id).sum(axis=1)
 	power_gen = power_generated(output_db, reactor_id) * lcoe(output_db, reactor_id)
 	rtn = pd.concat([costs, power_gen], axis=1).fillna(0)
-	rtn['Capital'] = rtn[0] + rtn[1]
+	rtn['Capital'] = (rtn[0] + rtn[1]).cumsum()
+	rtn['Actualized'] = rtn['Capital'] * actualization_vector(len(rtn['Capital']))
 	return rtn
     
 def lcoe(output_db, reactor_id, capital=True):
@@ -250,7 +244,7 @@ def institution_accumulate_capital(output_db, institution_id):
 	costs = - institution_annual_costs(output_db, institution_id).sum(axis=1)
 	power_gen = institution_power_generated(output_db, institution_id) * institution_average_lcoe(output_db, institution_id)
 	rtn = pd.concat([costs, power_gen], axis=1).fillna(0)
-	rtn['Capital'] = rtn[0] + rtn[1]
+	rtn['Capital'] = (rtn[0] + rtn[1]).cumsum()
 	return rtn
 		
 def institution_period_costs(output_db, institution_id, t0=0, period=20, capital=True):
@@ -533,7 +527,7 @@ def region_accumulate_capital(output_db, region_id):
 	costs = - region_annual_costs(output_db, region_id).sum(axis=1)
 	power_gen = region_power_generated(output_db, region_id) * region_average_lcoe(output_db, region_id)
 	rtn = pd.concat([costs, power_gen], axis=1).fillna(0)
-	rtn['Capital'] = rtn[0] + rtn[1]
+	rtn['Capital'] = (rtn[0] + rtn[1]).cumsum()
 	return rtn
 		
 def region_period_costs(output_db, region_id, t0=0, period=20, capital=True):
@@ -818,7 +812,7 @@ def simulation_accumulate_capital(output_db):
 	costs = - simulation_annual_costs(output_db).sum(axis=1)
 	power_gen = simulation_power_generated(output_db) * simulation_average_lcoe(output_db)
 	rtn = pd.concat([costs, power_gen], axis=1).fillna(0)
-	rtn['Capital'] = rtn[0] + rtn[1]
+	rtn['Capital'] = (rtn[0] + rtn[1]).cumsum()
 	return rtn
 		
 def simulation_period_costs(output_db, t0=0, period=20, capital=True):
