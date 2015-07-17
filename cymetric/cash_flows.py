@@ -483,8 +483,8 @@ def region_annual_costs(output_db, region_id, capital=True, truncate=True):
 			else:
 				simulation_end = duration
 	f_entry = evaler.eval('AgentEntry').reset_index()
-	f_entry = f_entry[f_entry['EnterTime'].apply(lambda x: x>simulation_begin and x<simulation_end)]
 	tmp = f_entry[f_entry.ParentId==region_id]
+	f_entry = f_entry[f_entry['EnterTime'].apply(lambda x: x>simulation_begin and x<simulation_end)]
 	id_inst = tmp[tmp.Kind=='Inst']['AgentId'].tolist()
 	id_reactor = []
 	for id in id_inst:
