@@ -248,7 +248,7 @@ def institution_accumulate_capital(output_db, institution_id):
 	"""-expenditures + income
 	"""
 	costs = - institution_annual_costs(output_db, institution_id).sum(axis=1)
-	power_gen = power_generated(output_db, institution_id) * institution_average_lcoe(output_db, institution_id)
+	power_gen = institution_power_generated(output_db, institution_id) * institution_average_lcoe(output_db, institution_id)
 	rtn = pd.concat([costs, power_gen], axis=1).fillna(0)
 	rtn['Capital'] = rtn[0] + rtn[1]
 	return rtn
@@ -410,7 +410,6 @@ def institution_lcoe(output_db, institution_id):
 		total_costs += costs['TotalCosts'][i] / ((1 + default_discount_rate) ** (i - commissioning))
 	return total_costs / power_generated
 
-# moy à ponderer par la puissance
 def institution_average_lcoe(output_db, institution_id):
 	"""Time dependent lcoe
 	"""
@@ -439,15 +438,25 @@ def institution_average_lcoe(output_db, institution_id):
 	id_reactor = f_entry[f_entry['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist()
 	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
 	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
+	f_power = evaler.eval('TimeSeriesPower')
 	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end + 1)))
+	rtn['Weighted sum'] = 0
+	rtn['Power'] = 0
+	rtn['Temp'] = pd.Series()
+	rtn['Temp2'] = pd.Series()
 	for id in id_reactor:
 		tmp = lcoe(output_db, id)
 		commissioning = f_entry[f_entry.AgentId==id]['EnterTime'].iloc[0]
 		lifetime = f_entry[f_entry.AgentId==id]['Lifetime'].iloc[0]
 		decommissioning = (commissioning + lifetime + initial_month - 1) // 12 + initial_year
 		commissioning = (commissioning + initial_month - 1) // 12 + initial_year
-		rtn[id] = pd.Series(tmp, index=list(range(commissioning, decommissioning + 1)))
-	return rtn.mean(axis=1).fillna(0)
+		power = f_power[f_power.AgentId==id]['Value'].iloc[0]
+		rtn['Temp'] = pd.Series(tmp, index=list(range(commissioning, decommissioning + 1))) * power
+		rtn['Weighted sum'] += rtn['Temp'].fillna(0)
+		rtn['Temp2'] = pd.Series(power, index=list(range(commissioning, decommissioning + 1))).fillna(0)
+		rtn['Power'] += rtn['Temp2']
+	rtn['Average LCOE'] = rtn['Weighted sum'] / rtn['Power']
+	return rtn
 		
 # Region level
 
@@ -721,14 +730,23 @@ def region_average_lcoe(output_db, region_id):
 	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
 	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
 	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end + 1)))
+	rtn['Weighted sum'] = 0
+	rtn['Power'] = 0
+	rtn['Temp'] = pd.Series()
+	rtn['Temp2'] = pd.Series()
 	for id in id_reactor:
 		tmp = lcoe(output_db, id)
 		commissioning = f_entry[f_entry.AgentId==id]['EnterTime'].iloc[0]
 		lifetime = f_entry[f_entry.AgentId==id]['Lifetime'].iloc[0]
 		decommissioning = (commissioning + lifetime + initial_month - 1) // 12 + initial_year
 		commissioning = (commissioning + initial_month - 1) // 12 + initial_year
-		rtn[id] = pd.Series(tmp, index=list(range(commissioning, decommissioning + 1)))
-	return rtn.mean(axis=1).fillna(0)
+		power = f_power[f_power.AgentId==id]['Value'].iloc[0]
+		rtn['Temp'] = pd.Series(tmp, index=list(range(commissioning, decommissioning + 1))) * power
+		rtn['Weighted sum'] += rtn['Temp'].fillna(0)
+		rtn['Temp2'] = pd.Series(power, index=list(range(commissioning, decommissioning + 1))).fillna(0)
+		rtn['Power'] += rtn['Temp2']
+	rtn['Average LCOE'] = rtn['Weighted sum'] / rtn['Power']
+	return rtn
 	
 # Simulation level
 
@@ -793,6 +811,15 @@ def simulation_annual_costs_present_value(output_db, capital=True, truncate=True
 	for year in df.index:
 		df.loc[year, :] = df.loc[year, :] / (1 + default_discount_rate) ** (year - df.index[0])
 	return df
+	
+def simulation_accumulate_capital(output_db):
+	"""-expenditures + income
+	"""
+	costs = - simulation_annual_costs(output_db).sum(axis=1)
+	power_gen = simulation_power_generated(output_db) * simulation_average_lcoe(output_db)
+	rtn = pd.concat([costs, power_gen], axis=1).fillna(0)
+	rtn['Capital'] = rtn[0] + rtn[1]
+	return rtn
 		
 def simulation_period_costs(output_db, t0=0, period=20, capital=True):
 	"""New manner to calculate price of electricity, maybe more accurate than lcoe : calculate all costs in a n years period and then determine how much the cost of electricity should be at an institutional level
@@ -978,14 +1005,23 @@ def simulation_average_lcoe(output_db):
 	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
 	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
 	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end + 1)))
+	rtn['Weighted sum'] = 0
+	rtn['Power'] = 0
+	rtn['Temp'] = pd.Series()
+	rtn['Temp2'] = pd.Series()
 	for id in id_reactor:
 		tmp = lcoe(output_db, id)
 		commissioning = f_entry[f_entry.AgentId==id]['EnterTime'].iloc[0]
 		lifetime = f_entry[f_entry.AgentId==id]['Lifetime'].iloc[0]
 		decommissioning = (commissioning + lifetime + initial_month - 1) // 12 + initial_year
 		commissioning = (commissioning + initial_month - 1) // 12 + initial_year
-		rtn[id] = pd.Series(tmp, index=list(range(commissioning, decommissioning + 1)))
-	return rtn.mean(axis=1).fillna(0)
+		power = f_power[f_power.AgentId==id]['Value'].iloc[0]
+		rtn['Temp'] = pd.Series(tmp, index=list(range(commissioning, decommissioning + 1))) * power
+		rtn['Weighted sum'] += rtn['Temp'].fillna(0)
+		rtn['Temp2'] = pd.Series(power, index=list(range(commissioning, decommissioning + 1))).fillna(0)
+		rtn['Power'] += rtn['Temp2']
+	rtn['Average LCOE'] = rtn['Weighted sum'] / rtn['Power']
+	return rtn
 
 ###########################
 # Plotting costs #
