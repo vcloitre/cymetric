@@ -542,7 +542,7 @@ def region_accumulate_capital(output_db, region_id):
 	"""-expenditures + income
 	"""
 	costs = - region_annual_costs(output_db, region_id).sum(axis=1)
-	power_gen = region_power_generated(output_db, region_id) * region_average_lcoe(output_db, region_id)
+	power_gen = region_power_generated(output_db, region_id) * region_average_lcoe(output_db, region_id)['Average LCOE']
 	rtn = pd.concat([costs, power_gen], axis=1).fillna(0)
 	rtn['Capital'] = (rtn[0] + rtn[1]).cumsum()
 	actualization = actualization_vector(len(rtn))
@@ -737,8 +737,8 @@ def region_average_lcoe(output_db, region_id):
 			else:
 				simulation_end = duration
 	f_entry = evaler.eval('AgentEntry').reset_index()
-	f_entry = f_entry[f_entry['EnterTime'].apply(lambda x: x>simulation_begin and x<simulation_end)]
 	tmp = f_entry[f_entry.ParentId==region_id]
+	f_entry = f_entry[f_entry['EnterTime'].apply(lambda x: x>simulation_begin and x<simulation_end)]
 	id_inst = tmp[tmp.Kind=='Inst']['AgentId'].tolist()
 	id_reactor = []
 	for id in id_inst:

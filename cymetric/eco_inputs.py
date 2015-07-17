@@ -189,6 +189,12 @@ def capital_shape(t0=5, duration=10, shape='triangle'):
 # Price actualization #
 #######################
 
+def actualization_vector(size):
+	"""Output : pandas Series with actualization factors
+	"""
+	rtn = pd.Series(1 / (1 + default_discount_rate), index=list(range(size))).cumprod()
+	return rtn * (1 + default_discount_rate)
+
 def actualize(price, delta_t, discount_rate=default_discount_rate):
     """Given a price at date t + delta_t, give the actualized price at t.
     """
