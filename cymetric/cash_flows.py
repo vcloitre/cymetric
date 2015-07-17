@@ -61,7 +61,7 @@ def annual_costs_present_value(output_db, reactor_id, capital=True):
 	"""Same as annual_cost except all values are actualized to the begin date of the SIMULATION
 	"""
 	costs = annual_costs(output_db, reactor_id, capital)
-	return costs.apply(lambda(x : x * actualization_vector(len(costs))))
+	return costs.apply(lambda x : x * actualization_vector(len(costs)))
    
 def average_cost(output_db, reactor_id, capital=True):
     """Given a reactor's AgentId, gather all annual costs and average it over
