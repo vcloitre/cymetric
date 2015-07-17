@@ -61,7 +61,9 @@ def annual_costs_present_value(output_db, reactor_id, capital=True):
 	"""Same as annual_cost except all values are actualized to the begin date of the SIMULATION
 	"""
 	costs = annual_costs(output_db, reactor_id, capital)
-	return costs.apply(lambda x : x * actualization_vector(len(costs)))
+	actualization = actualization_vector(len(costs))
+	actualization.index = costs.index
+	return costs.apply(lambda x : x * actualization)
    
 def average_cost(output_db, reactor_id, capital=True):
     """Given a reactor's AgentId, gather all annual costs and average it over
@@ -80,7 +82,9 @@ def accumulate_capital(output_db, reactor_id):
 	power_gen = power_generated(output_db, reactor_id) * lcoe(output_db, reactor_id)
 	rtn = pd.concat([costs, power_gen], axis=1).fillna(0)
 	rtn['Capital'] = (rtn[0] + rtn[1]).cumsum()
-	rtn['Actualized'] = rtn['Capital'] * actualization_vector(len(rtn['Capital']))
+	actualization = actualization_vector(len(rtn))
+	actualization.index = rtn.index
+	rtn['Actualized'] = rtn['Capital'] * actualization
 	return rtn
     
 def lcoe(output_db, reactor_id, capital=True):
@@ -156,6 +160,9 @@ def period_costs(output_db, reactor_id, period=20, capital=True):
 		#tmp['WasteManagement'][j] = pd.Series()
 	rtn = pd.DataFrame({'Costs (billion $)' : total['Payment2'] / 10 ** 9,  'Power (MWh)' : total['Power2'], 'Ratio' : total['Payment2'] / total['Power2']})
 	rtn.index.name = 'Time'
+	actualization = actualization_vector(len(rtn))
+	actualization.index = rtn.index
+	rtn['Actualized'] = rtn['Ratio'] * actualization
 	return rtn
    
 def power_generated(output_db, reactor_id):
@@ -231,12 +238,14 @@ def institution_annual_costs(output_db, institution_id, capital=True, truncate=T
 		del costs['Capital']
 	costs = costs.groupby('Year').sum()
 	return costs
-		
-def institution_annual_costs_present_value(output_db, institution_id, capital=True, truncate=True):
-	df = institution_annual_costs(output_db, institution_id, capital)
-	for year in df.index:
-		df.loc[year, :] = df.loc[year, :] / (1 + default_discount_rate) ** (year - df.index[0])
-	return df
+	
+def institution_annual_costs_present_value(output_db, reactor_id, capital=True):
+	"""Same as annual_cost except all values are actualized to the begin date of the SIMULATION
+	"""
+	costs = institution_annual_costs(output_db, institution_id, capital)
+	actualization = actualization_vector(len(costs))
+	actualization.index = costs.index
+	return costs.apply(lambda x : x * actualization)
 	
 def institution_accumulate_capital(output_db, institution_id):
 	"""-expenditures + income
@@ -245,6 +254,9 @@ def institution_accumulate_capital(output_db, institution_id):
 	power_gen = institution_power_generated(output_db, institution_id) * institution_average_lcoe(output_db, institution_id)
 	rtn = pd.concat([costs, power_gen], axis=1).fillna(0)
 	rtn['Capital'] = (rtn[0] + rtn[1]).cumsum()
+	actualization = actualization_vector(len(rtn))
+	actualization.index = rtn.index
+	rtn['Actualized'] = rtn['Capital'] * actualization
 	return rtn
 		
 def institution_period_costs(output_db, institution_id, t0=0, period=20, capital=True):
@@ -291,6 +303,9 @@ def institution_period_costs(output_db, institution_id, t0=0, period=20, capital
 		rtn.loc[j, 'Payment'] = rtn.loc[j - 1, 'Payment'] * (1 + default_discount_rate) - df.loc[j - 1 + t0, 'Costs'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j - 1 + period + t0, 'Costs'] / (1 + default_discount_rate) ** (period + t0 - 1)
 			#tmp['WasteManagement'][j] = pd.Series()
 	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
+	actualization = actualization_vector(len(rtn))
+	actualization.index = rtn.index
+	rtn['Actualized'] = rtn['Ratio'] * actualization
 	return rtn
 	
 def institution_period_costs2(output_db, institution_id, t0=0, period=20, capital=True):
@@ -516,10 +531,12 @@ def region_annual_costs(output_db, region_id, capital=True, truncate=True):
 	return costs
 		
 def region_annual_costs_present_value(output_db, region_id, capital=True, truncate=True):
-	df = region_annual_costs(output_db, region_id, capital)
-	for year in df.index:
-		df.loc[year, :] = df.loc[year, :] / (1 + default_discount_rate) ** (year - df.index[0])
-	return df
+	"""Same as annual_cost except all values are actualized to the begin date of the SIMULATION
+	"""
+	costs = region_annual_costs(output_db, region_id, capital)
+	actualization = actualization_vector(len(costs))
+	actualization.index = costs.index
+	return costs.apply(lambda x : x * actualization)
 		
 def region_accumulate_capital(output_db, region_id):
 	"""-expenditures + income
@@ -528,6 +545,9 @@ def region_accumulate_capital(output_db, region_id):
 	power_gen = region_power_generated(output_db, region_id) * region_average_lcoe(output_db, region_id)
 	rtn = pd.concat([costs, power_gen], axis=1).fillna(0)
 	rtn['Capital'] = (rtn[0] + rtn[1]).cumsum()
+	actualization = actualization_vector(len(rtn))
+	actualization.index = rtn.index
+	rtn['Actualized'] = rtn['Capital'] * actualization
 	return rtn
 		
 def region_period_costs(output_db, region_id, t0=0, period=20, capital=True):
@@ -574,6 +594,9 @@ def region_period_costs(output_db, region_id, t0=0, period=20, capital=True):
 		rtn.loc[j, 'Payment'] = rtn.loc[j - 1, 'Payment'] * (1 + default_discount_rate) - df.loc[j - 1 + t0, 'Costs'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j - 1 + period + t0, 'Costs'] / (1 + default_discount_rate) ** (period + t0 - 1)
 			#tmp['WasteManagement'][j] = pd.Series()
 	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
+	actualization = actualization_vector(len(rtn))
+	actualization.index = rtn.index
+	rtn['Actualized'] = rtn['Ratio'] * actualization
 	return rtn
 	
 def region_period_costs2(output_db, region_id, t0=0, period=20, capital=True):
