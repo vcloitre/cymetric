@@ -582,14 +582,16 @@ def region_period_costs(output_db, region_id, t0=0, period=20, capital=True):
 	df = df.fillna(0)
 	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
 	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
-	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end)))
+	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end + 1)))
 	rtn['Power'] = pd.Series()
 	rtn['Payment'] = pd.Series()
 	rtn = rtn.fillna(0)
+	print(rtn) # test
 	for i in range(simulation_begin + t0, simulation_begin + t0 + period):	
 		rtn.loc[simulation_begin, 'Power'] += df.loc[i, 'Power'] / (1 + default_discount_rate) ** (i - simulation_begin)
 		rtn.loc[simulation_begin, 'Payment'] += df.loc[i, 'Costs'] / (1 + default_discount_rate) ** (i - simulation_begin)
-	for j in range(simulation_begin + 1, simulation_end):
+	for j in range(simulation_begin + 1, simulation_end + 1):
+		print(j) # test
 		rtn.loc[j, 'Power'] = rtn.loc[j - 1, 'Power'] * (1 + default_discount_rate) - df.loc[j -1 + t0, 'Power'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j - 1 + period + t0, 'Power'] / (1 + default_discount_rate) ** (period + t0 - 1)
 		rtn.loc[j, 'Payment'] = rtn.loc[j - 1, 'Payment'] * (1 + default_discount_rate) - df.loc[j - 1 + t0, 'Costs'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j - 1 + period + t0, 'Costs'] / (1 + default_discount_rate) ** (period + t0 - 1)
 			#tmp['WasteManagement'][j] = pd.Series()
