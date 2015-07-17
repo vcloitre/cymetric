@@ -741,6 +741,7 @@ def region_average_lcoe(output_db, region_id):
 	f_entry = f_entry[f_entry['EnterTime'].apply(lambda x: x>simulation_begin and x<simulation_end)]
 	id_inst = tmp[tmp.Kind=='Inst']['AgentId'].tolist()
 	id_reactor = []
+	f_power = evaler.eval('TimeSeriesPower')
 	for id in id_inst:
 		f_entry2 = f_entry[f_entry.ParentId==id]
 		id_reactor += f_entry2[f_entry2['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist()
