@@ -252,7 +252,12 @@ def institution_accumulate_capital(output_db, institution_id):
 	"""
 	costs = - institution_annual_costs(output_db, institution_id).sum(axis=1)
 	power_gen = institution_power_generated(output_db, institution_id) * institution_average_lcoe(output_db, institution_id)
+	print(costs) # test
+	print(power_gen) # test
 	rtn = pd.concat([costs, power_gen], axis=1).fillna(0)
+	print(rtn) # test
+	print(0) # test
+	print(1) # test
 	rtn['Capital'] = (rtn[0] + rtn[1]).cumsum()
 	actualization = actualization_vector(len(rtn))
 	actualization.index = rtn.index
