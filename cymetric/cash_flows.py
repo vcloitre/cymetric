@@ -834,7 +834,7 @@ def simulation_accumulate_capital(output_db):
 	"""-expenditures + income
 	"""
 	costs = - simulation_annual_costs(output_db).sum(axis=1)
-	power_gen = simulation_power_generated(output_db) * simulation_average_lcoe(output_db)
+	power_gen = simulation_power_generated(output_db) * simulation_average_lcoe(output_db)['Average LCOE']
 	rtn = pd.concat([costs, power_gen], axis=1).fillna(0)
 	rtn['Capital'] = (rtn[0] + rtn[1]).cumsum()
 	actualization = actualization_vector(len(rtn))
