@@ -84,7 +84,7 @@ def accumulate_capital(output_db, reactor_id):
 	rtn['Capital'] = (rtn[0] + rtn[1]).cumsum()
 	actualization = actualization_vector(len(rtn))
 	actualization.index = rtn.index
-	rtn['Actualized'] = rtn['Capital'] * actualization
+	rtn['Actualized'] = ((rtn[0] + rtn[1]) * actualization).cumsum()
 	return rtn
     
 def lcoe(output_db, reactor_id, capital=True):
@@ -256,7 +256,7 @@ def institution_accumulate_capital(output_db, institution_id):
 	rtn['Capital'] = (rtn[0] + rtn[1]).cumsum()
 	actualization = actualization_vector(len(rtn))
 	actualization.index = rtn.index
-	rtn['Actualized'] = rtn['Capital'] * actualization
+	rtn['Actualized'] = ((rtn[0] + rtn[1]) * actualization).cumsum()
 	return rtn
 		
 def institution_period_costs(output_db, institution_id, t0=0, period=20, capital=True):
@@ -547,7 +547,7 @@ def region_accumulate_capital(output_db, region_id):
 	rtn['Capital'] = (rtn[0] + rtn[1]).cumsum()
 	actualization = actualization_vector(len(rtn))
 	actualization.index = rtn.index
-	rtn['Actualized'] = rtn['Capital'] * actualization
+	rtn['Actualized'] = ((rtn[0] + rtn[1]) * actualization).cumsum()
 	return rtn
 		
 def region_period_costs(output_db, region_id, t0=0, period=20, capital=True):
@@ -586,12 +586,10 @@ def region_period_costs(output_db, region_id, t0=0, period=20, capital=True):
 	rtn['Power'] = pd.Series()
 	rtn['Payment'] = pd.Series()
 	rtn = rtn.fillna(0)
-	print(rtn) # test
 	for i in range(simulation_begin + t0, simulation_begin + t0 + period):	
 		rtn.loc[simulation_begin, 'Power'] += df.loc[i, 'Power'] / (1 + default_discount_rate) ** (i - simulation_begin)
 		rtn.loc[simulation_begin, 'Payment'] += df.loc[i, 'Costs'] / (1 + default_discount_rate) ** (i - simulation_begin)
 	for j in range(simulation_begin + 1, simulation_end + 1):
-		print(j) # test
 		rtn.loc[j, 'Power'] = rtn.loc[j - 1, 'Power'] * (1 + default_discount_rate) - df.loc[j -1 + t0, 'Power'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j - 1 + period + t0, 'Power'] / (1 + default_discount_rate) ** (period + t0 - 1)
 		rtn.loc[j, 'Payment'] = rtn.loc[j - 1, 'Payment'] * (1 + default_discount_rate) - df.loc[j - 1 + t0, 'Costs'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j - 1 + period + t0, 'Costs'] / (1 + default_discount_rate) ** (period + t0 - 1)
 			#tmp['WasteManagement'][j] = pd.Series()
@@ -839,6 +837,9 @@ def simulation_accumulate_capital(output_db):
 	power_gen = simulation_power_generated(output_db) * simulation_average_lcoe(output_db)
 	rtn = pd.concat([costs, power_gen], axis=1).fillna(0)
 	rtn['Capital'] = (rtn[0] + rtn[1]).cumsum()
+	actualization = actualization_vector(len(rtn))
+	actualization.index = rtn.index
+	rtn['Actualized'] = ((rtn[0] + rtn[1]) * actualization).cumsum()
 	return rtn
 		
 def simulation_period_costs(output_db, t0=0, period=20, capital=True):
@@ -1024,6 +1025,7 @@ def simulation_average_lcoe(output_db):
 	id_reactor = f_entry[f_entry['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist()
 	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
 	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
+	f_power = evaler.eval('TimeSeriesPower')
 	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end + 1)))
 	rtn['Weighted sum'] = 0
 	rtn['Power'] = 0
