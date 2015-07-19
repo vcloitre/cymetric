@@ -128,8 +128,8 @@ def period_costs(output_db, reactor_id, t0=0, period=20, capital=True):
 	df['Power'] = power
 	df['Costs'] = costs
 	df = df.fillna(0)
-	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
-	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
+	simulation_begin = initial_year
+	simulation_end = (duration + initial_month - 1) // 12 + initial_year
 	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end)))
 	rtn['Power'] = pd.Series()
 	rtn['Payment'] = pd.Series()
@@ -163,8 +163,8 @@ def period_costs2(output_db, reactor_id, t0=0, period=20, capital=True):
 	df['Power'] = power
 	df['Costs'] = costs
 	df = df.fillna(0)
-	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
-	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
+	simulation_begin = initial_year
+	simulation_end = (duration + initial_month - 1) // 12 + initial_year
 	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end + 1)))
 	rtn['Power'] = pd.Series()
 	rtn['Payment'] = pd.Series()
