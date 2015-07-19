@@ -111,58 +111,70 @@ def lcoe(output_db, reactor_id, capital=True):
 		total_costs += costs['TotalCosts'][i] / ((1 + default_discount_rate) ** (i - commissioning))
 	return total_costs / power_generated 
 	
-def period_costs(output_db, reactor_id, period=20, capital=True):
-	"""Same as below but at a reactor level
+def period_costs(output_db, reactor_id, t0=0, period=20, capital=True):
+	"""New manner to calculate price of electricity, maybe more accurate than lcoe : calculate all costs in a n years period and then determine how much the cost of electricity should be at an institutional level
+	costs used to calculate period costs at date t are [t+t0, t+t0+period]
 	"""
 	db = dbopen(output_db)
 	evaler = Evaluator(db)
 	f_info = evaler.eval('Info').reset_index()
-	initial_month = f_info['InitialMonth'].iloc[0]
-	initial_year = f_info['InitialYear'].iloc[0]
-	sim_duration = f_info['Duration'].iloc[0]
-	f_entry = evaler.eval('AgentEntry').reset_index()
-	f_entry = f_entry[f_entry.ParentId==reactor_id]
-	f_power = evaler.eval('TimeSeriesPower').reset_index()
-	f_power = f_power[f_power['AgentId']==reactor_id]
-	f_power['Date'] = pd.Series(f_power.loc[:, 'Time']).apply(lambda x: (x + initial_month - 1) // 12 + initial_year)
-	del f_power['SimId']
-	f_power = f_power.groupby('Date').sum()
-	f_capital = evaler.eval('CapitalCost').reset_index()
-	f_capital = f_capital[f_capital['AgentId']==reactor_id].set_index('Time')
-	f_capital = f_capital['Payment'] # other columns are useless
-	f_decom = evaler.eval('DecommissioningCost').reset_index()
-	f_decom = f_decom[f_decom['AgentId']==reactor_id].set_index('Time')
-	f_decom = f_decom['Payment']
-	f_OM = evaler.eval('OperationMaintenance').reset_index()
-	f_OM = f_OM[f_OM['AgentId']==reactor_id].set_index('Time')
-	f_OM = f_OM['Payment']
-	f_fuel = evaler.eval('FuelCost').reset_index()
-	f_fuel = f_fuel[f_fuel['AgentId']==reactor_id].set_index('Time')
-	f_fuel = f_fuel['Payment']
-	if capital:
-		total = pd.concat([f_capital, f_decom, f_OM, f_fuel])
-	else:
-		total = pd.concat([f_decom, f_OM, f_fuel])
-	total = total.reset_index()
-	total['Date'] = pd.Series(total['Time']).apply(lambda x: (x + initial_month - 1) // 12 + initial_year)
-	total = total.groupby('Date').sum()
-	total['Power'] = f_power['Value']
-	total['Power2'] = pd.Series()
-	total['Payment2']= pd.Series()
-	total = pd.concat([total, pd.DataFrame(index=list(range(initial_year, initial_year + sim_duration // 12 + 1)))],axis=1)
-	total = total.fillna(0)
-	for i in range(initial_year, initial_year + period):	
-		total.loc[period // 2 + initial_year, 'Power2'] += total.loc[i, 'Power'] * 8760/12 / (1 + default_discount_rate) ** (i - period // 2 - initial_year)
-		total.loc[period // 2 + initial_year, 'Payment2'] += total.loc[i, 'Payment'] / (1 + default_discount_rate) ** (i - period // 2 - initial_year)
-	for j in range(period // 2 + initial_year + 1, sim_duration // 12 + initial_year - period // 2):
-		total.loc[j, 'Power2'] = total.loc[j - 1, 'Power2'] * (1 + default_discount_rate) - total.loc[j - 1 - period // 2, 'Power'] * 8760/12 * (1 + default_discount_rate) ** (period // 2 + 1) + total.loc[j + period // 2, 'Power'] * 8760/12 / (1 + default_discount_rate) ** (period // 2)
-		total.loc[j, 'Payment2'] = total.loc[j - 1, 'Payment2'] * (1 + default_discount_rate) - total.loc[j - 1 - period // 2, 'Payment'] * (1 + default_discount_rate) ** (period // 2 + 1) + total.loc[j + period // 2, 'Payment'] / (1 + default_discount_rate) ** (period // 2)
-		#tmp['WasteManagement'][j] = pd.Series()
-	rtn = pd.DataFrame({'Costs (billion $)' : total['Payment2'] / 10 ** 9,  'Power (MWh)' : total['Power2'], 'Ratio' : total['Payment2'] / total['Power2']})
-	rtn.index.name = 'Time'
+	duration = f_info.loc[0, 'Duration']
+	initial_year = f_info.loc[0, 'InitialYear']
+	initial_month = f_info.loc[0, 'InitialMonth']
+	costs = annual_costs(output_db, reactor_id, capital)
+	costs = costs.sum(axis=1)
+	power = power_generated(output_db, reactor_id)
+	df = pd.DataFrame(index=list(range(initial_year, initial_year + duration // 12 + 1)))
+	df['Power'] = power
+	df['Costs'] = costs
+	df = df.fillna(0)
+	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
+	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
+	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end)))
+	rtn['Power'] = pd.Series()
+	rtn['Payment'] = pd.Series()
+	rtn = rtn.fillna(0)
+	for i in range(simulation_begin + t0, simulation_begin + t0 + period):	
+		rtn.loc[simulation_begin, 'Power'] += df.loc[i, 'Power'] / (1 + default_discount_rate) ** (i - simulation_begin)
+		rtn.loc[simulation_begin, 'Payment'] += df.loc[i, 'Costs'] / (1 + default_discount_rate) ** (i - simulation_begin)
+	for j in range(simulation_begin + 1, simulation_end):
+		rtn.loc[j, 'Power'] = rtn.loc[j - 1, 'Power'] * (1 + default_discount_rate) - df.loc[j -1 + t0, 'Power'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j - 1 + period + t0, 'Power'] / (1 + default_discount_rate) ** (period + t0 - 1)
+		rtn.loc[j, 'Payment'] = rtn.loc[j - 1, 'Payment'] * (1 + default_discount_rate) - df.loc[j - 1 + t0, 'Costs'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j - 1 + period + t0, 'Costs'] / (1 + default_discount_rate) ** (period + t0 - 1)
+			#tmp['WasteManagement'][j] = pd.Series()
+	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
 	actualization = actualization_vector(len(rtn))
 	actualization.index = rtn.index
 	rtn['Actualized'] = rtn['Ratio'] * actualization
+	return rtn
+	
+def period_costs2(output_db, reactor_id, t0=0, period=20, capital=True):
+	"""Just for tests : slower but more secure
+	"""
+	db = dbopen(output_db)
+	evaler = Evaluator(db)
+	f_info = evaler.eval('Info').reset_index()
+	duration = f_info.loc[0, 'Duration']
+	initial_year = f_info.loc[0, 'InitialYear']
+	initial_month = f_info.loc[0, 'InitialMonth']
+	costs = annual_costs(output_db, institution_id, capital)
+	costs = costs.sum(axis=1)
+	power = power_generated(output_db, institution_id)
+	df = pd.DataFrame(index=list(range(initial_year, initial_year + duration // 12 + 1)))
+	df['Power'] = power
+	df['Costs'] = costs
+	df = df.fillna(0)
+	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
+	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
+	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end + 1)))
+	rtn['Power'] = pd.Series()
+	rtn['Payment'] = pd.Series()
+	rtn = rtn.fillna(0)
+	for j in range(simulation_begin, simulation_end + 1):
+		for i in range(j + t0, j + t0 + period):
+			rtn.loc[j, 'Power'] += df.loc[i, 'Power'] / (1 + default_discount_rate) ** (i - j)
+			rtn.loc[j, 'Payment'] += df.loc[i, 'Costs'] / (1 + default_discount_rate) ** (i - j)
+			#tmp['WasteManagement'][j] = pd.Series()
+	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
 	return rtn
    
 def power_generated(output_db, reactor_id):
