@@ -490,7 +490,7 @@ def institution_average_lcoe(output_db, institution_id):
 		rtn['Temp2'] = pd.Series(power, index=list(range(commissioning, decommissioning + 1))).fillna(0)
 		rtn['Power'] += rtn['Temp2']
 	rtn['Average LCOE'] = rtn['Weighted sum'] / rtn['Power']
-	return rtn
+	return rtn.fillna(0)
 		
 # Region level
 
@@ -789,7 +789,7 @@ def region_average_lcoe(output_db, region_id):
 		rtn['Temp2'] = pd.Series(power, index=list(range(commissioning, decommissioning + 1))).fillna(0)
 		rtn['Power'] += rtn['Temp2']
 	rtn['Average LCOE'] = rtn['Weighted sum'] / rtn['Power']
-	return rtn
+	return rtn.fillna(0)
 	
 # Simulation level
 
@@ -1068,7 +1068,7 @@ def simulation_average_lcoe(output_db):
 		rtn['Temp2'] = pd.Series(power, index=list(range(commissioning, decommissioning + 1))).fillna(0)
 		rtn['Power'] += rtn['Temp2']
 	rtn['Average LCOE'] = rtn['Weighted sum'] / rtn['Power']
-	return rtn
+	return rtn.fillna(0)
 
 ###########################
 # Plotting costs #
