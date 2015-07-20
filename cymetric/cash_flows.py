@@ -134,9 +134,9 @@ def period_costs(output_db, reactor_id, t0=0, period=20, capital=True):
 				simulation_end = int(truncation.find('simulation_end').text)
 			else:
 				simulation_end = duration
-	costs = annual_costs(output_db, reactor_id, capital, truncate=False)
+	costs = annual_costs(output_db, reactor_id, capital)
 	costs = costs.sum(axis=1)
-	power = power_generated(output_db, reactor_id, truncate=False)
+	power = power_generated(output_db, reactor_id)
 	df = pd.DataFrame(index=list(range(initial_year, initial_year + duration // 12 + 1)))
 	df['Power'] = power
 	df['Costs'] = costs
