@@ -64,27 +64,20 @@ def capital_cost(series):
     rtn = pd.DataFrame()
     begin = [default_cap_begin] * len(id_reactors)
     duration = [default_cap_duration] * len(id_reactors)
+    discount_rate = default_discount_rate
     shape = default_cap_shape
     overnight_cost = default_cap_overnight
-    discount_rate = default_discount_rate
-    print(0) # test
-    print(0.5) # test
     if os.path.isfile(xml_inputs):
-    	print(1) # test
     	tree = ET.parse(xml_inputs)
     	root = tree.getroot()
     	# just in case no definition of parameters
     	if root.find('capital') == None:
-    		print(2) # test
     		for region in root.findall('region'):
     			if region.find('capital') == None:
-    				print(3) # test
     				for institution in region.findall('institution'):
     					if institution.find('capital') == None:
-    						print(4) # test
     						for facility in institution.findall('facility'):
     							id = int(facility.find('id').text)
-    							print(id) # test
     							capital = facility.find('capital')
     							if capital.find('pace') is not None: #random parameters
     								if capital.find('pace').text == "rapid":
@@ -107,7 +100,6 @@ def capital_cost(series):
     								else:
     									duration = default_cap_duration
     								if capital.find('overnight_cost') is not None:
-    									print(5) # test
     									overnight_cost = int(capital.find('overnight_cost').text)
     								else:
     									overnight_cost = default_cap_overnight					
@@ -115,7 +107,6 @@ def capital_cost(series):
     									shape = capital.find('costs_shape').text
     								else:
     									shape = default_cap_shape
-    							print(overnight_cost) # test		
     							s_cost = capital_shape(begin, duration, shape)
     							tmp = f_power[f_power.AgentId==id]
     							f_entry.loc[id, 'Capacity'] = max(tmp['Value'])
@@ -284,7 +275,6 @@ def fuel_cost(series):
     """fuel_cost returns the cash flows related to the fuel costs for power 
     plants.
     """
-    print(0) # test
     fuel_price = 2360 # $/kg
     # see http://www.world-nuclear.org/info/Economic-Aspects/Economics-of-Nuclear-Power/
     # need to add a dictionnary with diff commodities and prices (uox, wast etc..)
