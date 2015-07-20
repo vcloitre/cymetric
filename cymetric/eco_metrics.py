@@ -377,10 +377,17 @@ def economic_info(series):
     truncation = root.find('truncation')
     rtn['BeginMonth'] = int(truncation.find('simulation_begin').text)
     rtn['EndMonth'] = int(truncation.find('simulation_end').text)
+    rtn['DiscountRate'] = pd.Series()
     if root.find('finance') == None:
     	for region in root.findall('region'):
+    		id_region = int(region.find('id').text)
     		finance = region.find('finance')
-    		rtn['DiscountRate'] = int(finance.find('discount_rate').text)
+    		discount_rate = int(finance.find('discount_rate').text)
+    		rtn[rtn.AgentId==id_region]['DiscountRate'] = discount_rate
+    		for id_institution in rtn[rtn.ParentId==id_region]['AgentId'].tolist():
+    			rtn[rtn.AgentId==id_institution]['DiscountRate'] = discount_rate
+    			for id_reactor in rtn[rtn.ParentId==id_institution]['AgentId'].tolist():
+    				rtn[rtn.AgentId==id_reactor]['DiscountRate'] = discount_rate
     else:
     	finance = root.find('finance')
     	rtn['DiscountRate'] = int(finance.find('discount_rate').text)
