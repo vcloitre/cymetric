@@ -365,161 +365,25 @@ del _omdeps, _omschema
 
 _eideps = [('Info', ('SimId'), 'InitialYear'), ('AgentEntry', ('AgentId', 'Spec'), 'EnterTime')]
 
-_eischema = [('SimId', ts.UUID), ('DiscountRate', ts.DOUBLE), ('CapitalMode', ts.STRING), ('ConstructionBegin', ts.INT), ('ConstructionDuration', ts.INT), ('OvernightCost', ts.INT), ('FixedOM', ts.INT), ('VariableOM', ts.INT)]
+_eischema = [('AgentId', ts.INT), ('Kind', ts.STRING), ('ParentId', ts.INT), ('BeginMonth', ts.INT), ('EndMonth', ts.INT), ('DiscountRate', ts.DOUBLE)]
 		
 @metric(name='EconomicInfo', depends=_eideps, schema=_eischema)
 def economic_info(series):
     """Write the economic parameters in the database
     """
-    f_entry = f_entry[f_entry.Spec == ":cycamore:Reactor"]
-    id_reactors = f_entry["AgentId"].tolist()
+    f_entry = series[1].reset_index()
     xml_inputs = 'parameters.xml'
-    begin = default_cap_begin
-    duration = default_cap_duration    
-    overnight_cost = default_cap_overnight
-    fixedOM = default_fixedOM
-    variableOM = default_variableOM
-    if root.find('capital') == None:
+    rtn = f_entry[['AgentId','Kind','ParentId']]
+    truncation = root.find('truncation')
+    rtn['BeginMonth'] = int(truncation.find('simulation_begin').text)
+    rtn['EndMonth'] = int(truncation.find('simulation_end').text)
+    if root.find('finance') == None:
     	for region in root.findall('region'):
-    		if region.find('capital') == None:
-    			for institution in region.findall('institution'):
-    				if institution.find('capital') == None:
-    					for facility in instituion.findall('facility'):
-    						if facility.find('capital') == None:
-    							raise Exception("Missing capital costs parameters in " + xml_inputs)
-    						else:
-    							id = int(facility.find('id').text)
-    							capital = facility.find('capital')
-    							if capital.find('pace') is not None: #random parameters
-    								if capital.find('pace').text == "rapid":
-    									begin = rapid_cap_begin + int(lst[j])
-    									duration = rapid_cap_duration + 2 * int(lst[j])
-    								elif capital.find('pace').text == "slow":
-    									begin = slow_cap_begin + int(lst[j])
-    									duration = slow_cap_duration + 2 * int(lst[j])
-    								else: #normal
-    									begin = default_cap_begin + int(lst[j])
-    									duration = default_cap_duration + 2 * int(lst[j])
-    								j += 1	
-    							else: #own parameters
-    								if capital.find('begin') is not None:
-    									begin = int(capital.find('begin').text)
-    								else:
-    									begin = default_cap_begin
-    								if capital.find('duration') is not None:
-    									duration = int(capital.find('duration').text)
-    								else:
-    									duration = default_cap_duration
-    							if capital.find('overnight_cost') is not None:
-    								overnight_cost = int(capital.find('overnight_cost').text)
-    							else:
-    								overnight_cost = default_cap_overnight			
-    								
-    							if capital.find('shape') is not None:
-    								shape = capital.find('costs_shape').text
-    							else:
-    								shape = default_cap_shape
-    							
-    							rtn = pd.concat([rtn, reactor_i_df], ignore_index=True)
-    				else:
-    					capital = institution.find('capital')
-    					if capital.find('pace') is not None: #random parameters
-    						if capital.find('pace').text == "rapid":
-    							begin = rapid_cap_begin + int(lst[j])
-    							duration = rapid_cap_duration + 2 * int(lst[j])
-    						elif capital.find('pace').text == "slow":
-    							begin = slow_cap_begin + int(lst[j])
-    							duration = slow_cap_duration + 2 * int(lst[j])
-    						else: #normal
-    							begin = default_cap_begin + int(lst[j])
-    							duration = default_cap_duration + 2 * int(lst[j])
-    						j += 1	
-    					else: #own parameters
-    						if capital.find('begin') is not None:
-    							begin = int(capital.find('begin').text)
-    						else:
-    							begin = default_cap_begin
-    						if capital.find('duration') is not None:
-    							duration = int(capital.find('duration').text)
-    						else:
-    							duration = default_cap_duration
-    					if capital.find('overnight_cost') is not None:
-    						overnight_cost = int(capital.find('overnight_cost').text)
-    					else:
-    						overnight_cost = default_cap_overnight
-    					if capital.find('shape') is not None:
-    						shape = capital.find('costs_shape').text
-    					else:
-    						shape = default_cap_shape
-    					for facility in institution.find('facility'):
-    						id = int(facility.find('id').text)
-    						rtn = pd.concat([rtn, reactor_i_df], ignore_index=True)
-    		else:
-    			capital = region.find('capital')
-    			if capital.find('pace') is not None: #random parameters
-    				if capital.find('pace').text == "rapid":
-    					begin = rapid_cap_begin + int(lst[j])
-    					duration = rapid_cap_duration + 2 * int(lst[j])
-    				elif capital.find('pace').text == "slow":
-    					begin = slow_cap_begin + int(lst[j])
-    					duration = slow_cap_duration + 2 * int(lst[j])
-    				else: #normal
-    					begin = default_cap_begin + int(lst[j])
-    					duration = default_cap_duration + 2 * int(lst[j])
-    				j += 1
-    			else: #own parameters
-    				if capital.find('begin') is not None:
-    					begin = int(capital.find('begin').text)
-    				else:
-    					begin = default_cap_begin
-    				if capital.find('duration') is not None:
-    					duration = int(capital.find('duration').text)
-    				else:
-    					duration = default_cap_duration
-    			if capital.find('overnight_cost') is not None:
-    				overnight_cost = int(capital.find('overnight_cost').text)
-    			else:
-    				overnight_cost = default_cap_overnight
-    			if capital.find('shape') is not None:
-    				shape = capital.find('costs_shape').text
-    			else:
-    				shape = default_cap_shape
-    			for institution in region.find('instituion'):
-    				for facility in institution.find('facility'):
-    					id = int(facility.find('id').text)
-    					rtn = pd.concat([rtn, reactor_i_df], ignore_index=True)	
-    else:
-    	capital = root.find('capital')
-    	if capital.find('pace') is not None: #random parameters
-    		if capital.find('pace').text == "rapid":
-    			begin = rapid_cap_begin + int(lst[j])
-    			duration = rapid_cap_duration + 2 * int(lst[j])
-    		elif capital.find('pace').text == "slow":
-    			begin = slow_cap_begin + int(lst[j])
-    			duration = slow_cap_duration + 2 * int(lst[j])
-    		else: #normal
-    			begin = default_cap_begin + int(lst[j])
-    			duration = default_cap_duration + 2 * int(lst[j])
-    		j += 1
-    	else: #own parameters
-    		if capital.find('begin') is not None:
-    			begin = int(capital.find('begin').text)
-    		else:
-    			begin = default_cap_begin
-    		if capital.find('duration') is not None:
-    			duration = int(capital.find('duration').text)
-    		else:
-    			duration = default_cap_duration
-    	if capital.find('overnight_cost') is not None:
-    		overnight_cost = int(capital.find('overnight_cost').text)
-    	else:
-    		overnight_cost = default_cap_overnight
-    	if capital.find('shape') is not None:
-    		shape = capital.find('costs_shape').text
-    	else:
-    		shape = default_cap_shape
-    	for id in id_reactors:
-    		rtn = pd.concat([rtn, reactor_i_df], ignore_index=True)	
+    		finance = region.find('finance')
+    		rtn['DiscountRate'] = int(finance.find('discount_rate').text)
+    else :
+    	finance = root.find('finance')
+    	rtn['DiscountRate'] = int(finance.find('discount_rate').text)
     return rtn
 	
 del _eideps, _eischema
