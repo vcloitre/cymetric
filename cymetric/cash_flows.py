@@ -121,15 +121,28 @@ def period_costs(output_db, reactor_id, t0=0, period=20, capital=True):
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
 	initial_month = f_info.loc[0, 'InitialMonth']
-	costs = annual_costs(output_db, reactor_id, capital)
+	if os.path.isfile(xml_inputs):
+		tree = ET.parse(xml_inputs)
+		root = tree.getroot()
+		if root.find('truncation') is not None:
+			truncation = root.find('truncation')
+			if truncation.find('simulation_begin') is not None:
+				simulation_begin = int(truncation.find('simulation_begin').text)
+			else:
+				simulation_begin = 0
+			if truncation.find('simulation_end') is not None:
+				simulation_end = int(truncation.find('simulation_end').text)
+			else:
+				simulation_end = duration
+	costs = annual_costs(output_db, reactor_id, capital, truncate=False)
 	costs = costs.sum(axis=1)
-	power = power_generated(output_db, reactor_id)
+	power = power_generated(output_db, reactor_id, truncate=False)
 	df = pd.DataFrame(index=list(range(initial_year, initial_year + duration // 12 + 1)))
 	df['Power'] = power
 	df['Costs'] = costs
 	df = df.fillna(0)
-	simulation_begin = initial_year
-	simulation_end = (duration + initial_month - 1) // 12 + initial_year
+	simulation_begin = (simulation_begin + initial_month - 1) // 12 + initial_year # year instead of months
+	simulation_end = (simulation_end + initial_month - 1) // 12 + initial_year
 	rtn = pd.DataFrame(index=list(range(simulation_begin, simulation_end)))
 	rtn['Power'] = pd.Series()
 	rtn['Payment'] = pd.Series()
@@ -141,7 +154,7 @@ def period_costs(output_db, reactor_id, t0=0, period=20, capital=True):
 		rtn.loc[j, 'Power'] = rtn.loc[j - 1, 'Power'] * (1 + default_discount_rate) - df.loc[j -1 + t0, 'Power'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j - 1 + period + t0, 'Power'] / (1 + default_discount_rate) ** (period + t0 - 1)
 		rtn.loc[j, 'Payment'] = rtn.loc[j - 1, 'Payment'] * (1 + default_discount_rate) - df.loc[j - 1 + t0, 'Costs'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j - 1 + period + t0, 'Costs'] / (1 + default_discount_rate) ** (period + t0 - 1)
 			#tmp['WasteManagement'][j] = pd.Series()
-	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
+	rtn['Ratio'] = rtn['Payment'] / rtn ['Power'] * (rtn['Power'] > 1)
 	actualization = actualization_vector(len(rtn))
 	actualization.index = rtn.index
 	rtn['Actualized'] = rtn['Ratio'] * actualization
@@ -174,7 +187,7 @@ def period_costs2(output_db, reactor_id, t0=0, period=20, capital=True):
 			rtn.loc[j, 'Power'] += df.loc[i, 'Power'] / (1 + default_discount_rate) ** (i - j)
 			rtn.loc[j, 'Payment'] += df.loc[i, 'Costs'] / (1 + default_discount_rate) ** (i - j)
 			#tmp['WasteManagement'][j] = pd.Series()
-	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
+	rtn['Ratio'] = rtn['Payment'] / rtn ['Power'] * (rtn['Power'] > 1)
 	return rtn
    
 def power_generated(output_db, reactor_id):
@@ -314,7 +327,7 @@ def institution_period_costs(output_db, institution_id, t0=0, period=20, capital
 		rtn.loc[j, 'Power'] = rtn.loc[j - 1, 'Power'] * (1 + default_discount_rate) - df.loc[j -1 + t0, 'Power'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j - 1 + period + t0, 'Power'] / (1 + default_discount_rate) ** (period + t0 - 1)
 		rtn.loc[j, 'Payment'] = rtn.loc[j - 1, 'Payment'] * (1 + default_discount_rate) - df.loc[j - 1 + t0, 'Costs'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j - 1 + period + t0, 'Costs'] / (1 + default_discount_rate) ** (period + t0 - 1)
 			#tmp['WasteManagement'][j] = pd.Series()
-	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
+	rtn['Ratio'] = rtn['Payment'] / rtn ['Power'] * (rtn['Power'] > 1)
 	actualization = actualization_vector(len(rtn))
 	actualization.index = rtn.index
 	rtn['Actualized'] = rtn['Ratio'] * actualization
@@ -360,7 +373,7 @@ def institution_period_costs2(output_db, institution_id, t0=0, period=20, capita
 			rtn.loc[j, 'Power'] += df.loc[i, 'Power'] / (1 + default_discount_rate) ** (i - j)
 			rtn.loc[j, 'Payment'] += df.loc[i, 'Costs'] / (1 + default_discount_rate) ** (i - j)
 			#tmp['WasteManagement'][j] = pd.Series()
-	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
+	rtn['Ratio'] = rtn['Payment'] / rtn ['Power'] * (rtn['Power'] > 1)
 	return rtn
 		
 def institution_power_generated(output_db, institution_id, truncate=True):
@@ -605,7 +618,7 @@ def region_period_costs(output_db, region_id, t0=0, period=20, capital=True):
 		rtn.loc[j, 'Power'] = rtn.loc[j - 1, 'Power'] * (1 + default_discount_rate) - df.loc[j -1 + t0, 'Power'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j - 1 + period + t0, 'Power'] / (1 + default_discount_rate) ** (period + t0 - 1)
 		rtn.loc[j, 'Payment'] = rtn.loc[j - 1, 'Payment'] * (1 + default_discount_rate) - df.loc[j - 1 + t0, 'Costs'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j - 1 + period + t0, 'Costs'] / (1 + default_discount_rate) ** (period + t0 - 1)
 			#tmp['WasteManagement'][j] = pd.Series()
-	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
+	rtn['Ratio'] = rtn['Payment'] / rtn ['Power'] * (rtn['Power'] > 1)
 	actualization = actualization_vector(len(rtn))
 	actualization.index = rtn.index
 	rtn['Actualized'] = rtn['Ratio'] * actualization
@@ -651,7 +664,7 @@ def region_period_costs2(output_db, region_id, t0=0, period=20, capital=True):
 			rtn.loc[j, 'Power'] += df.loc[i, 'Power'] / (1 + default_discount_rate) ** (i - j)
 			rtn.loc[j, 'Payment'] += df.loc[i, 'Costs'] / (1 + default_discount_rate) ** (i - j)
 			#tmp['WasteManagement'][j] = pd.Series()
-	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
+	rtn['Ratio'] = rtn['Payment'] / rtn ['Power'] * (rtn['Power'] > 1)
 	return rtn
 		
 def region_power_generated(output_db, region_id, truncate=True):
@@ -897,7 +910,7 @@ def simulation_period_costs(output_db, t0=0, period=20, capital=True):
 		rtn.loc[j, 'Power'] = rtn.loc[j - 1, 'Power'] * (1 + default_discount_rate) - df.loc[j -1 + t0, 'Power'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j - 1 + period + t0, 'Power'] / (1 + default_discount_rate) ** (period + t0 - 1)
 		rtn.loc[j, 'Payment'] = rtn.loc[j - 1, 'Payment'] * (1 + default_discount_rate) - df.loc[j - 1 + t0, 'Costs'] * (1 + default_discount_rate) ** (1 - t0) + df.loc[j - 1 + period + t0, 'Costs'] / (1 + default_discount_rate) ** (period + t0 - 1)
 			#tmp['WasteManagement'][j] = pd.Series()
-	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
+	rtn['Ratio'] = rtn['Payment'] / rtn ['Power'] * (rtn['Power'] > 1)
 	return rtn
 	
 def simulation_period_costs2(output_db, t0=0, period=20, capital=True):
@@ -940,7 +953,7 @@ def simulation_period_costs2(output_db, t0=0, period=20, capital=True):
 			rtn.loc[j, 'Power'] += df.loc[i, 'Power'] / (1 + default_discount_rate) ** (i - j)
 			rtn.loc[j, 'Payment'] += df.loc[i, 'Costs'] / (1 + default_discount_rate) ** (i - j)
 			#tmp['WasteManagement'][j] = pd.Series()
-	rtn['Ratio'] = rtn['Payment'] / rtn ['Power']
+	rtn['Ratio'] = rtn['Payment'] / rtn ['Power'] * (rtn['Power'] > 1)
 	return rtn
 		
 def simulation_power_generated(output_db, truncate=True):
