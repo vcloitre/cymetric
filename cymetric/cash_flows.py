@@ -203,7 +203,8 @@ def power_generated(output_db, reactor_id):
 	f_power = f_power[f_power['AgentId']==reactor_id]
 	f_power['Year'] = (f_power['Time'] + initial_month - 1) // 12 + initial_year
 	f_power = f_power.groupby('Year').sum()
-	return f_power['Value'] * 8760 / 12
+	rtn = pd.Series(f_power['Value'] * 8760 / 12, index=list(range(initial_year, initial_year + (initial_month + duration) // 12 + 1)))
+	return rtn.fillna(0)
    
 # Institution level
     
@@ -406,9 +407,9 @@ def institution_power_generated(output_db, institution_id, truncate=True):
 	f_power = f_power[f_power['AgentId'].apply(lambda x: x in id_reactor)]
 	f_power['Year'] = (f_power['Time'] + initial_month - 1) // 12 + initial_year
 	f_power = f_power.groupby('Year').sum()
-	rtn = f_power['Value'] * 8760 / 12
+	rtn = pd.Series(f_power['Value'] * 8760 / 12, index=list(range(initial_year, initial_year + (initial_month + duration) // 12 + 1)))
 	rtn.name = 'Power in MWh'
-	return rtn
+	return rtn.fillna(0)
 
 def institution_lcoe(output_db, institution_id):
 	"""
@@ -701,9 +702,9 @@ def region_power_generated(output_db, region_id, truncate=True):
 	f_power = f_power[f_power['AgentId'].apply(lambda x: x in id_reactor)]
 	f_power['Year'] = (f_power['Time'] + initial_month - 1) // 12 + initial_year
 	f_power = f_power.groupby('Year').sum()
-	rtn = f_power['Value'] * 8760 / 12
+	rtn = pd.Series(f_power['Value'] * 8760 / 12, index=list(range(initial_year, initial_year + (initial_month + duration) // 12 + 1)))
 	rtn.name = 'Power in MWh'
-	return rtn
+	return rtn.fillna(0)
 
 def region_lcoe(output_db, region_id):
 	"""
@@ -985,9 +986,9 @@ def simulation_power_generated(output_db, truncate=True):
 	f_power = f_power[f_power['AgentId'].apply(lambda x: x in id_reactor)]
 	f_power['Year'] = (f_power['Time'] + initial_month - 1) // 12 + initial_year
 	f_power = f_power.groupby('Year').sum()
-	rtn = f_power['Value'] * 8760 / 12
+	rtn = pd.Series(f_power['Value'] * 8760 / 12, index=list(range(initial_year, initial_year + (initial_month + duration) // 12 + 1)))
 	rtn.name = 'Power in MWh'
-	return rtn
+	return rtn.fillna(0)
 
 def simulation_lcoe(output_db):
 	"""
