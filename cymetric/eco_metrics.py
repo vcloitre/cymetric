@@ -363,7 +363,7 @@ def operation_maintenance(series):
 del _omdeps, _omschema
 
 
-_eideps = [('Info', ('SimId'), 'InitialYear'), ('AgentEntry', ('AgentId', 'Kind'), 'ParentId')]
+_eideps = [('AgentEntry', ('AgentId', 'Kind'), 'ParentId')]
 
 _eischema = [('AgentId', ts.INT), ('Kind', ts.STRING), ('ParentId', ts.INT), ('BeginMonth', ts.INT), ('EndMonth', ts.INT), ('DiscountRate', ts.DOUBLE)]
 		
@@ -371,7 +371,7 @@ _eischema = [('AgentId', ts.INT), ('Kind', ts.STRING), ('ParentId', ts.INT), ('B
 def economic_info(series):
     """Write the economic parameters in the database
     """
-    f_entry = series[1].reset_index()
+    f_entry = series[0].reset_index()
     xml_inputs = 'parameters.xml'
     rtn = f_entry[['AgentId','Kind','ParentId']]
     truncation = root.find('truncation')
