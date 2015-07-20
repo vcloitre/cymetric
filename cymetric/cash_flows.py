@@ -489,7 +489,7 @@ def institution_average_lcoe(output_db, institution_id):
 		rtn['Temp'] = pd.Series(tmp, index=list(range(commissioning, decommissioning + 1))) * power
 		rtn['Weighted sum'] += rtn['Temp'].fillna(0)
 		rtn['Temp2'] = pd.Series(power, index=list(range(commissioning, decommissioning + 1))).fillna(0)
-		rtn['Power'] += rtn['Temp2']
+		rtn['Power'] += rtn['Temp2'].fillna(0)
 	rtn['Average LCOE'] = rtn['Weighted sum'] / rtn['Power']
 	return rtn.fillna(0)
 		
