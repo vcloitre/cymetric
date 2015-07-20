@@ -373,6 +373,8 @@ def economic_info(series):
     """
     f_entry = series[0].reset_index()
     xml_inputs = 'parameters.xml'
+    tree = ET.parse(xml_inputs)
+    root = tree.getroot()
     rtn = f_entry[['AgentId','Kind','ParentId']]
     truncation = root.find('truncation')
     rtn['BeginMonth'] = int(truncation.find('simulation_begin').text)
