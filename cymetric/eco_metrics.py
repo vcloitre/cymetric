@@ -363,7 +363,7 @@ def operation_maintenance(series):
 del _omdeps, _omschema
 
 
-_eideps = [('Info', ('SimId'), 'InitialYear'), ('AgentEntry', ('AgentId', 'Spec'), 'EnterTime')]
+_eideps = [('Info', ('SimId'), 'InitialYear'), ('AgentEntry', ('AgentId', 'Kind'), 'ParentId')]
 
 _eischema = [('AgentId', ts.INT), ('Kind', ts.STRING), ('ParentId', ts.INT), ('BeginMonth', ts.INT), ('EndMonth', ts.INT), ('DiscountRate', ts.DOUBLE)]
 		
@@ -381,7 +381,7 @@ def economic_info(series):
     	for region in root.findall('region'):
     		finance = region.find('finance')
     		rtn['DiscountRate'] = int(finance.find('discount_rate').text)
-    else :
+    else:
     	finance = root.find('finance')
     	rtn['DiscountRate'] = int(finance.find('discount_rate').text)
     return rtn
