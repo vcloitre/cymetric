@@ -52,8 +52,8 @@ def capital_cost(series):
     f_entry = series[1].reset_index()
     f_info = series[2].reset_index()
     sim_duration = f_info['Duration'].iloc[0]
-    f_entry = f_entry[f_entry.Spec == ":cycamore:Reactor"]
-    id_reactors = f_entry["AgentId"].tolist()
+    tmp = f_entry[f_entry.Spec == ":cycamore:Reactor"]
+    id_reactors = tmp["AgentId"].tolist()
     # lst = 12 * np.random.randn(len(id_reactors))
     #lst *= lst > 0 # we only consider delays (positive values), no head start (negative values)
     #lst = list(map(int,lst))
@@ -63,7 +63,7 @@ def capital_cost(series):
     lst -= var
     lst += 10000 * (lst < -70)
     j = 0
-    f_entry = pd.DataFrame([f_entry.EnterTime, f_entry.AgentId, f_entry.ParentId]).transpose()
+    f_entry = pd.DataFrame([f_entry.EnterTime, f_entry.AgentId, f_entry.ParentId, f_entry.Spec]).transpose()
     f_entry = f_entry.set_index(['AgentId'])
     f_entry['Capacity'] = pd.Series()
     rtn = pd.DataFrame()
