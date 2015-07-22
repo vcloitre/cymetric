@@ -61,7 +61,7 @@ def capital_cost(series):
     var=std**2
     lst = np.random.poisson(var, len(id_reactors))
     lst -= var
-    lst = lst * (lst > -80)
+    lst = lst * (lst > -70)
     j = 0
     f_entry = pd.DataFrame([f_entry.EnterTime, f_entry.AgentId]).transpose()
     f_entry = f_entry.set_index(['AgentId'])
@@ -89,8 +89,8 @@ def capital_cost(series):
     									begin = rapid_cap_begin + int(lst[j])
     									duration = rapid_cap_duration + 2 * int(lst[j])
     								elif capital.find('pace').text == "slow":
-    									begin = slow_cap_begin + int(lst[j])
-    									duration = slow_cap_duration + 2 * int(lst[j])
+    									begin = slow_cap_begin + lst[j]
+    									duration = slow_cap_duration + 2 * lst[j]
     								else: #normal
     									begin = default_cap_begin + int(lst[j])
     									duration = default_cap_duration + 2 * int(lst[j])
