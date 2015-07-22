@@ -135,7 +135,7 @@ rapid_cap_begin = 36
 # idea : take real durations from real examples and quote them
 rapid_cap_duration = 72
 slow_cap_begin = 103 #84
-slow_cap_duration = 163#144
+slow_cap_duration = 175#144
 default_cap_begin = 60
 default_cap_duration = 108
 default_cap_overnight = 4000000 # $/MW
