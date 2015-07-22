@@ -1066,8 +1066,8 @@ def simulation_average_lcoe(output_db):
 		power = f_power[f_power.AgentId==id]['Value'].iloc[0]
 		rtn['Temp'] = pd.Series(tmp, index=list(range(commissioning, decommissioning + 1))) * power
 		rtn['Weighted sum'] += rtn['Temp'].fillna(0)
-		rtn['Temp2'] = pd.Series(power, index=list(range(commissioning, decommissioning + 1))).fillna(0)
-		rtn['Power'] += rtn['Temp2']
+		rtn['Temp2'] = pd.Series(power, index=list(range(commissioning, decommissioning + 1)))
+		rtn['Power'] += rtn['Temp2'].fillna(0)
 		print(id) # test
 	rtn['Average LCOE'] = rtn['Weighted sum'] / rtn['Power']
 	return rtn.fillna(0)
