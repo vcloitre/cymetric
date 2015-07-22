@@ -61,7 +61,7 @@ def capital_cost(series):
     var=std**2
     lst = np.random.poisson(var, len(id_reactors))
     lst -= var
-    lst = lst * (lst > -70)
+    lst += 10000 * (lst < -70)
     j = 0
     f_entry = pd.DataFrame([f_entry.EnterTime, f_entry.AgentId]).transpose()
     f_entry = f_entry.set_index(['AgentId'])
