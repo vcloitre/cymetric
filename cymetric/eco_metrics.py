@@ -89,8 +89,8 @@ def capital_cost(series):
     									begin = rapid_cap_begin + int(lst[j])
     									duration = rapid_cap_duration + 2 * int(lst[j])
     								elif capital.find('pace').text == "slow":
-    									begin = slow_cap_begin + lst[j]
-    									duration = slow_cap_duration + 2 * lst[j]
+    									begin = slow_cap_begin + int(lst[j])
+    									duration = slow_cap_duration + 2 * int(lst[j])
     								else: #normal
     									begin = default_cap_begin + int(lst[j])
     									duration = default_cap_duration + 2 * int(lst[j])
