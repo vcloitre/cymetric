@@ -122,7 +122,8 @@ def capital_cost(series):
     					else:
     						capital = institution.find('capital')
     						instId = int(institution.find('id').text)
-    						id_reactors = f_entry[f_entry.ParentId==instId][f_entry['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist() # all reactor ids that belong to institution instId
+    						tmp = f_entry[f_entry.ParentId==instId]
+    						id_reactors = tmp[tmp['Spec'].apply(lambda x: 'REACTOR' in x.upper())].index.tolist() # all reactor ids that belong to institution instId
     						if capital.find('pace') is not None: #random parameters
     							if capital.find('pace').text == "rapid":
     								begin = [rapid_cap_begin] * len(id_reactors) + np.array(lst[j:j+len(id_reactors)])
