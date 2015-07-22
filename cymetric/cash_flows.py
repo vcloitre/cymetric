@@ -1068,6 +1068,7 @@ def simulation_average_lcoe(output_db):
 		rtn['Weighted sum'] += rtn['Temp'].fillna(0)
 		rtn['Temp2'] = pd.Series(power, index=list(range(commissioning, decommissioning + 1))).fillna(0)
 		rtn['Power'] += rtn['Temp2']
+		print(id) # test
 	rtn['Average LCOE'] = rtn['Weighted sum'] / rtn['Power']
 	return rtn.fillna(0)
 
