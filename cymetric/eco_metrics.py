@@ -63,7 +63,7 @@ def capital_cost(series):
     lst -= var
     lst += 10000 * (lst < -70)
     j = 0
-    f_entry = pd.DataFrame([f_entry.EnterTime, f_entry.AgentId]).transpose()
+    f_entry = pd.DataFrame([f_entry.EnterTime, f_entry.AgentId, f_entry.ParentId]).transpose()
     f_entry = f_entry.set_index(['AgentId'])
     f_entry['Capacity'] = pd.Series()
     rtn = pd.DataFrame()
