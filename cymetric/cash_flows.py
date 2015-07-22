@@ -1244,6 +1244,7 @@ def iter_lcoe(output_db, reactor_id, iteration):
 	lst=[]
 	for i in range(0,iteration):
 		lst.append(lcoe(output_db, reactor_id))
+	print(lst) # test
 	plt.hist(x=lst, bins=iteration/10)
 	plt.show()
 
