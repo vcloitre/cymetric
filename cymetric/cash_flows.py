@@ -25,7 +25,7 @@ def annual_costs(output_db, reactor_id, capital=True):
     lifetime of the reactor.
     """
     db = dbopen(output_db)
-    evaler = Evaluator(db)
+    evaler = Evaluator(db, write=False)
     f_info = evaler.eval('Info').reset_index()
     duration = f_info.loc[0, 'Duration']
     initial_year = f_info.loc[0, 'InitialYear']
@@ -70,7 +70,7 @@ def average_cost(output_db, reactor_id, capital=True):
      the lifetime of the reactor.
     """
     db = dbopen(output_db)
-    evaler = Evaluator(db)
+    evaler = Evaluator(db, write=False)
     f_power = evaler.eval('TimeSeriesPower').reset_index()
     power_generated = sum(f_power[f_power.AgentId==reactor_id]['Value']) * 8760 / 12
     return annual_costs(output_db, reactor_id, capital).sum().sum() / power_generated
@@ -94,7 +94,7 @@ def lcoe(output_db, reactor_id, capital=True):
 	costs['TotalCosts'] = costs.sum(axis=1)
 	commissioning = costs['Capital'].idxmax()
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	initial_month = f_info['InitialMonth'].iloc[0]
 	initial_year = f_info['InitialYear'].iloc[0]
@@ -116,7 +116,7 @@ def period_costs(output_db, reactor_id, t0=0, period=20, capital=True):
 	costs used to calculate period costs at date t are [t+t0, t+t0+period]
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -164,7 +164,7 @@ def period_costs2(output_db, reactor_id, t0=0, period=20, capital=True):
 	"""Just for tests : slower but more secure
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -194,7 +194,7 @@ def power_generated(output_db, reactor_id):
 	"""
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_power = evaler.eval('TimeSeriesPower').reset_index()	
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
@@ -212,7 +212,7 @@ def institution_annual_costs(output_db, institution_id, capital=True, truncate=T
 	"""reactors annual costs for a given institution returned as a pandas DataFrame containing total annual costs for each reactor id
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -290,7 +290,7 @@ def institution_period_costs(output_db, institution_id, t0=0, period=20, capital
 	costs used to calculate period costs at date t are [t+t0, t+t0+period]
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -338,7 +338,7 @@ def institution_period_costs2(output_db, institution_id, t0=0, period=20, capita
 	"""Just for tests : slower but more secure
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -381,7 +381,7 @@ def institution_power_generated(output_db, institution_id, truncate=True):
 	"""
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -415,7 +415,7 @@ def institution_lcoe(output_db, institution_id):
 	"""
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -449,7 +449,7 @@ def institution_average_lcoe(output_db, institution_id):
 	"""Time dependent lcoe
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -499,7 +499,7 @@ def region_annual_costs(output_db, region_id, capital=True, truncate=True):
 	"""reactors annual costs for a given institution returned as a pandas DataFrame containing total annual costs for each reactor id
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -581,7 +581,7 @@ def region_period_costs(output_db, region_id, t0=0, period=20, capital=True):
 	costs used to calculate period costs at date t are [t+t0, t+t0+period]
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -629,7 +629,7 @@ def region_period_costs2(output_db, region_id, t0=0, period=20, capital=True):
 	"""Just for tests : slower but more secure
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -672,7 +672,7 @@ def region_power_generated(output_db, region_id, truncate=True):
 	"""
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -710,7 +710,7 @@ def region_lcoe(output_db, region_id):
 	"""
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -744,7 +744,7 @@ def region_average_lcoe(output_db, region_id):
 	"""Time dependent lcoe
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -798,7 +798,7 @@ def simulation_annual_costs(output_db, capital=True, truncate=True):
 	"""reactors annual costs for a given institution returned as a pandas DataFrame containing total annual costs for each reactor id
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -873,7 +873,7 @@ def simulation_period_costs(output_db, t0=0, period=20, capital=True):
 	costs used to calculate period costs at date t are [t+t0, t+t0+period]
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -918,7 +918,7 @@ def simulation_period_costs2(output_db, t0=0, period=20, capital=True):
 	"""Just for tests : slower but more secure
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -961,7 +961,7 @@ def simulation_power_generated(output_db, truncate=True):
 	"""
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -994,7 +994,7 @@ def simulation_lcoe(output_db):
 	"""
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -1028,7 +1028,7 @@ def simulation_average_lcoe(output_db):
 	"""Time dependent lcoe
 	"""
 	db = dbopen(output_db)
-	evaler = Evaluator(db)
+	evaler = Evaluator(db, write=False)
 	f_info = evaler.eval('Info').reset_index()
 	duration = f_info.loc[0, 'Duration']
 	initial_year = f_info.loc[0, 'InitialYear']
@@ -1103,7 +1103,7 @@ def average_cost_plot(output_db, reactor_id, capital=True):
     if not isinstance(reactor_id, list):
     	raise TypeError('Wrong input, reactor ids should be given in a list')
     db = dbopen(output_db)
-    evaler = Evaluator(db)
+    evaler = Evaluator(db, write=False)
     f_info = evaler.eval('Info').reset_index()
     duration = f_info['Duration'].iloc[0]
     df = pd.DataFrame(index=list(range(duration)))
@@ -1133,7 +1133,7 @@ def lcoe_plot(output_db, reactor_id, capital=True):
     if not isinstance(reactor_id, list):
     	raise TypeError('Wrong input, reactor ids should be given in a list')
     db = dbopen(output_db)
-    evaler = Evaluator(db)
+    evaler = Evaluator(db, write=False)
     f_info = evaler.eval('Info').reset_index()
     duration = f_info['Duration'].iloc[0]
     initial_year = f_info['InitialYear'].iloc[0]
@@ -1230,10 +1230,10 @@ def iter_metric(iteration, output_db, metric):
 	""" metric is a string, output_db as well, iteration integer function works for the following metrics : CapitalCost,
 	"""
 	db = dbopen(output_db)
-	frame = Evaluator(db).eval(metric)
+	frame = Evaluator(db, write=False).eval(metric)
 	frame = frame.groupby(['AgentId', 'Time']).sum()
 	for i in range(1, iteration):
-		tmp = Evaluator(db).eval(metric)
+		tmp = Evaluator(db, write=False).eval(metric)
 		tmp = tmp.groupby(['AgentId', 'Time']).sum()
 		frame = pd.concat([frame, tmp], axis=1)
 	return frame
