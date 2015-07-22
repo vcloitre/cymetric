@@ -48,10 +48,6 @@ def capital_cost(series):
     make the price depends on the reactor technology and make the payment more 
     realistic, ie include interest rates, improve the linear model and finally 
     be able to fetch data"""
-    std=3.507*12
-    var=std**2
-    lst = np.random.poisson(var, len(id_reactors))
-    lst -= var
     f_power = series[0].reset_index()
     f_entry = series[1].reset_index()
     f_info = series[2].reset_index()
@@ -61,6 +57,10 @@ def capital_cost(series):
     # lst = 12 * np.random.randn(len(id_reactors))
     #lst *= lst > 0 # we only consider delays (positive values), no head start (negative values)
     #lst = list(map(int,lst))
+    std=3.507*12
+    var=std**2
+    lst = np.random.poisson(var, len(id_reactors))
+    lst -= var
     j = 0
     f_entry = pd.DataFrame([f_entry.EnterTime, f_entry.AgentId]).transpose()
     f_entry = f_entry.set_index(['AgentId'])
