@@ -185,6 +185,19 @@ def capital_shape(t0=5, duration=10, shape='triangle'):
     else:
         raise Exception("Wrong shape, valid shapes are in the following list : " + str(shapes))
         
+def discount_rate(amountOfDebt, amountOfEquity, taxRate, returnOnDebt, returnOnEquity, inflationRate):
+	"""D'Haeseleer p.81"""
+	nominalRate = returnOnDebt * amountOfDebt + returnOnEquity * amountOfEquity
+	realRate = (1 + nominalRate) / (1 + inflationRate) - 1
+	
+def overnight_cost(foak, n):
+	"""gives price of noak given foak price
+	http://www.power-eng.com/content/dam/pe/online-articles/documents/2011/july/EPRI.pdf
+	https://www.netl.doe.gov/File%20Library/research/energy%20analysis/publications/QGESS_FOAKtoNOAK_Final.pdf
+	http://www.rff.org/events/documents/rffexperiencecurvetalk.pdf LR~20% => b="""
+	b = 0.002888279324826512
+	return foak * n ** (- b)
+
 #######################
 # Price actualization #
 #######################
