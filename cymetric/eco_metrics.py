@@ -404,8 +404,8 @@ def economic_info(series):
     operation_maintenance = root.find('operation_maintenance')
     if not operation_maintenance == None:
     	ser['operationMaintenance'] = True
-    	rtn.loc[:, ('OperationMaintenance', 'FixedCost')] = int(operation_maintenance.find('fixed_cost').text)
-    	rtn.loc[:, ('OperationMaintenance', 'VariableCost')] = int(operation_maintenance.find('variable_cost').text)
+    	rtn.loc[:, ('OperationMaintenance', 'FixedCost')] = int(operation_maintenance.find('fixed').text)
+    	rtn.loc[:, ('OperationMaintenance', 'VariableCost')] = int(operation_maintenance.find('variable').text)
     fuel = root.find('fuel')
     if not fuel == None:
     	ser['fuel'] = True
