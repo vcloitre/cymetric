@@ -380,7 +380,6 @@ def economic_info(series):
     xml_inputs = 'parameters.xml'
     tree = ET.parse(xml_inputs)
     root = tree.getroot()
-    rtn = f_entry[['AgentId','Kind','ParentId']]
     truncation = root.find('truncation')
     rtn[('Truncation', 'Begin')] = int(truncation.find('simulation_begin').text)
     rtn[('Truncation', 'End')] = int(truncation.find('simulation_end').text)
