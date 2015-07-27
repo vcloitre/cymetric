@@ -530,7 +530,7 @@ def economic_info(series):
     				rtn.loc[agent_index[id_reactor], ('Decommissioning', 'Duration')] = duration
     				rtn.loc[agent_index[id_reactor], ('Decommissioning', 'OvernightCost')] = overnight_cost
     		operation_maintenance = institution.find('operation_maintenance')
-    		if operationMaintenance is not None:
+    		if operation_maintenance is not None:
     			fixed = int(operation_maintenance.find('fixed').text)
     			variable = int(operation_maintenance.find('variable').text)
     			rtn.loc[agent_index[id_institution], ('OperationMaintenance', 'FixedCost')] = fixed
