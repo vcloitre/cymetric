@@ -409,7 +409,7 @@ def economic_info(series):
     	rtn.loc[:, ('OperationMaintenance', 'VariableCost')] = int(operation_maintenance.find('variable_cost').text)
     fuel = root.find('fuel')
     if not fuel == None:
-    ser['fuel'] = True
+    	ser['fuel'] = True
     	rtn.loc[:, ('Fuel', 'Cost')] = int(fuel.find('cost').text)
     	rtn.loc[:, ('Fuel', 'WasteFee')] = int(fuel.find('waste_fee').text)
     # discount rate is only possible at sim or reg level
