@@ -568,12 +568,6 @@ def economic_info(series):
     			if decommissioning is not None:
     				rtn.loc[agent_index[id_reactor], ('Decommissioning', 'Duration')] = int(decommissioning.find('duration').text)
     				rtn.loc[agent_index[id_reactor], ('Decommissioning', 'OvernightCost')] = int(decommissioning.find('overnight_cost').text)
-    
-    if 'decommissioning' in ser[ser==False]:
-    if 'operationmMaintenance' in ser[ser==False]:
-    if 'fuel' in ser[ser==False]: 
-    	[('Agent', 'Kind'), ('Agent', 'AgentId'), ('Agent', 'ParentId'), ('Finance','ReturnOnDebt'), ('Finance','ReturnOnEquity'), ('Finance','TaxRate'), ('Finance','DiscountRate'), 
-    	('Capital', 'Begin'), ('Capital', 'Duration'), ('Capital', 'Pace'), ('Capital', 'OvernightCost'), ('Decommissioning', 'Duration'), ('Decommissioning', 'OvernightCost'), ('OperationMaintenance', 'FixedCost'), ('OperationMaintenance', 'VariableCost'), ('Fuel', 'Cost'), ('Fuel', 'WasteFee'), ('Truncation', 'Begin'), ('Truncation', 'End')]
     return rtn
 	
 del _eideps, _eischema
