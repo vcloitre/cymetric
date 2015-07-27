@@ -21,12 +21,8 @@
 	<finance>
 		<discount_rate></discount_rate>
 		<tax_rate></tax_rate> <!-- % -->
-		<depreciation_schedule></depreciation_schedule> <!-- depreciation type -->
-		<depreciation_time></depreciation_time> <!-- months -->
-		<external_cost></external_cost> <!-- $/MWh -->
-		<CO2_price></CO2_price> <!-- $/tonCO2 -->
-		<initial_BC></initial_BC> <!-- $/MWh -->
-		<delta_BC></delta_BC> <!-- $/MWh -->
+		<return_on_debt></return_on_debt>
+		<return_on_equity></return_on_equity>
 	</finance>
 
 	<capital>
@@ -34,16 +30,11 @@
 		<begin></begin>  <!-- months before commissioning -->
 		<duration></duration>  <!-- duration of construction in months -->
 		<pace></pace>  <!-- "normal", "rapid" or "slow" -->
-		<costs_shape></costs_shape>  <!-- "linear" or "random" -->
 		<overnight_cost></overnight_cost>  <!-- $/MW -->
 	</capital>
 
 	<decommissioning>
-		<mode></mode> <!-- "default" "own" or "random" -->
-		<begin></begin> <!-- months after decommissioning -->
 		<duration></duration> <!-- duration of decommissioning in months -->
-		<pace></pace> <!-- "normal", "rapid" or "slow" -->
-		<costs_shape></costs_shape> <!-- "linear" or "random" -->
 		<overnight_cost></overnight_cost> <!-- $/MW -->
 	</decommissioning>
 
@@ -52,18 +43,16 @@
 		<variable></variable>  <!-- $/MWh -->
 	</operation_maintenance>
 
-	<fuel_cost>
-		<yellow_cake></yellow_cake> <!-- $/kg -->
-		<conversion_cost></conversion_cost> <!-- $/kg -->
-		<swu></swu> <!-- $/swu -->
-		<UO2></UO2> <!-- $/kg -->
-		<Pu></Pu> <!-- $/kg -->
-	</fuel_cost>
+	<fuel>
+		<waste_fee></waste_fee> <!-- $/kg -->
+		<cost></cost> <!-- $/kg -->
+	</fuel>
 
 	<waste_fee>
 	</waste_fee>
-	<simulation_begin>
-	</simulation_begin>
-	<simulation_end>
-	</simulation_end>
+	
+	<truncation>
+		<simulation_begin>0</simulation_begin><!--all reactors commissionned at this date will be included in the costs calculations-->
+		<simulation_end>1200</simulation_end><!--all reactors commissionned at this date will be included in the costs calculations (for lcoe, costs for decommissioning will be included). Warning : if reactors are not decommissionned at the end of the simulation, warning message-->
+	</truncation>
 </model>
