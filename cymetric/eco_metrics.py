@@ -33,12 +33,8 @@ xml_inputs = 'parameters.xml' # temporary solution : always store an xml file in
 
 ## The actual metrics ##
 
-<begin></begin>  <!-- months before commissioning -->
-		<duration></duration>  <!-- duration of construction in months -->
-		<pace></pace>  <!-- "normal", "rapid" or "slow" -->
-		<overnight_cost></overnight_cost
 
-_ccdeps = [('TimeSeriesPower', ('SimId', 'AgentId', 'Value'), 'Time'), ('AgentEntry', ('AgentId', 'ParentId', 'Spec'), 'EnterTime'), ('Info', ('InitialYear', 'InitialMonth'), 'Duration'), ('EconomicInfo', (('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Capital', 'Begin'), ('Capital', 'Duration'), ('Capital', 'Pace')), ('Capital', 'OvernightCost'))]
+_ccdeps = [('TimeSeriesPower', ('SimId', 'AgentId', 'Value'), 'Time'), ('AgentEntry', ('AgentId', 'ParentId', 'Spec'), 'EnterTime'), ('Info', ('InitialYear', 'InitialMonth'), 'Duration'), ('EconomicInfo', (('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Capital', 'Begin'), ('Capital', 'Duration'), ('Capital', 'Deviation')), ('Capital', 'OvernightCost'), ('Finance','DiscountRate'))]
 
 _ccschema = [('SimId', ts.UUID), ('AgentId', ts.INT),
              ('Time', ts.INT), ('Payment', ts.DOUBLE)]
@@ -75,197 +71,20 @@ def capital_cost(series):
     rtn = pd.DataFrame()
     for id in agent_ids:
     	tmp = f_ecoi.loc[id]
-    	if 'REACTOR' in tmp.loc[id, ('Agent','Prototype')].upper():
-    	begin = f_ecoi
-    	cashFlowShape = capital_shape(begin, duration, shape)
-    	tmp = f_power[f_power.AgentId==id]
-    	f_entry.loc[id, 'Capacity'] = max(tmp['Value'])
-    	s_cost2 = np.around(s_cost * overnight_cost * f_entry.loc[id, 'Capacity'], 3)
-    							s_cost2 = s_cost2 * ((1 + discount_rate) ** math.ceil(duration / 12) - 1) / (discount_rate * math.ceil(duration / 12))
-    if os.path.isfile(xml_inputs):
-    	tree = ET.parse(xml_inputs)
-    	root = tree.getroot()
-    	# just in case no definition of parameters
-    	if root.find('capital') == None:
-    		for region in root.findall('region'):
-    			if region.find('capital') == None:
-    				for institution in region.findall('institution'):
-    					if institution.find('capital') == None:
-    						for facility in institution.findall('facility'):
-    							id = int(facility.find('id').text)
-    							capital = facility.find('capital')
-    							if capital.find('pace') is not None: #random parameters
-    								if capital.find('pace').text == "rapid":
-    									begin = rapid_cap_begin + int(lst[j])
-    									duration = rapid_cap_duration + 2 * int(lst[j])
-    								elif capital.find('pace').text == "slow":
-    									begin = slow_cap_begin + int(lst[j])
-    									duration = slow_cap_duration + 2 * int(lst[j])
-    								else: #normal
-    									begin = default_cap_begin + int(lst[j])
-    									duration = default_cap_duration + 2 * int(lst[j])
-    								j += 1	
-    							else: #own parameters
-    								if capital.find('begin') is not None:
-    									begin = int(capital.find('begin').text)
-    								else:
-    									begin = default_cap_begin
-    								if capital.find('duration') is not None:
-    									duration = int(capital.find('duration').text)
-    								else:
-    									duration = default_cap_duration
-    								if capital.find('overnight_cost') is not None:
-    									overnight_cost = int(capital.find('overnight_cost').text)
-    								else:
-    									overnight_cost = default_cap_overnight					
-    								if capital.find('shape') is not None:
-    									shape = capital.find('costs_shape').text
-    								else:
-    									shape = default_cap_shape
-    							s_cost = capital_shape(begin, duration, shape)
-    							tmp = f_power[f_power.AgentId==id]
-    							f_entry.loc[id, 'Capacity'] = max(tmp['Value'])
-    							s_cost2 = np.around(s_cost * overnight_cost * f_entry.loc[id, 'Capacity'], 3)
-    							s_cost2 = s_cost2 * ((1 + discount_rate) ** math.ceil(duration / 12) - 1) / (discount_rate * math.ceil(duration / 12)) # to take into account interest (see ppt X "intérêts intercalaires" or "Appendix-A reactor-level analysis of busbar costs.pdf" in cost calculations folder)
-    							reactor_i_df = pd.DataFrame({'AgentId': id, 'Time': pd.Series(list(range(duration + 1))) - begin + f_entry.EnterTime[id], 'Payment' : s_cost2})
-    							rtn = pd.concat([rtn, reactor_i_df], ignore_index=True)
-    					else:
-    						capital = institution.find('capital')
-    						instId = int(institution.find('id').text)
-    						tmp = f_entry[f_entry.ParentId==instId]
-    						id_reactors = tmp[tmp['Spec'].apply(lambda x: 'REACTOR' in x.upper())].index.tolist() # all reactor ids that belong to institution instId
-    						if capital.find('pace') is not None: #random parameters
-    							if capital.find('pace').text == "rapid":
-    								begin = [rapid_cap_begin] * len(id_reactors) + np.array(lst[j:j+len(id_reactors)])
-    								duration = [rapid_cap_duration] * len(id_reactors) + 2 * np.array(lst[j:j+len(id_reactors)])
-    							elif capital.find('pace').text == "slow":
-    								begin = [slow_cap_begin] * len(id_reactors) + np.array(lst[j:j+len(id_reactors)])
-    								duration = [slow_cap_duration] * len(id_reactors) + 2 * np.array(lst[j:j+len(id_reactors)])
-    							else: #normal
-    								begin = [default_cap_begin] * len(id_reactors) + np.array(lst[j:j+len(id_reactors)])
-    								duration = [default_cap_duration] * len(id_reactors) + 2 * np.array(lst[j:j+len(id_reactors)])
-    						else: #own parameters
-    							if capital.find('begin') is not None:
-    								begin = [int(capital.find('begin').text)] * len(id_reactors)
-    							else:
-    								begin = [default_cap_begin] * len(id_reactors)
-    							if capital.find('duration') is not None:
-    								duration = [int(capital.find('duration').text)] * len(id_reactors)
-    							else:
-    								duration = [default_cap_duration] * len(id_reactors)
-    						if capital.find('overnight_cost') is not None:
-    							overnight_cost = int(capital.find('overnight_cost').text)
-    						else:
-    							overnight_cost = default_cap_overnight
-    						if capital.find('shape') is not None:
-    							shape = capital.find('costs_shape').text
-    						else:
-    							shape = default_cap_shape
-    						j += len(id_reactors)
-    						cpt = 0
-    						for id in id_reactors:
-    							s_cost = capital_shape(int(begin[cpt]), int(duration[cpt]), shape)
-    							tmp = f_power[f_power.AgentId==id]
-    							f_entry.loc[id, 'Capacity'] = max(tmp['Value'])
-    							s_cost2 = np.around(s_cost * overnight_cost * f_entry.loc[id, 'Capacity'], 3)
-    							s_cost2 = s_cost2 * ((1 + discount_rate) ** math.ceil(duration[cpt] / 12) - 1) / (discount_rate * math.ceil(duration[cpt] / 12)) # to take into account interest (see ppt X "intérêts intercalaires" or "Appendix-A reactor-level analysis of busbar costs.pdf" in cost calculations folder)
-    							reactor_i_df = pd.DataFrame({'AgentId': id, 'Time': pd.Series(list(range(duration[cpt] + 1))) - begin[cpt] + f_entry.EnterTime[id], 'Payment' : s_cost2})
-    							rtn = pd.concat([rtn, reactor_i_df], ignore_index=True)
-    							cpt += 1
-    			else:
-    				capital = region.find('capital')
-    				regId = int(region.find('id').text)
-    				id_inst = f_entry[f_entry.Kind=='Inst'][f_entry.ParentId==regId].tolist()
-    				id_reactors = []
-    				for instId in id_inst:
-    					id_reactors +=  f_entry[f_entry.ParentId==instId][f_entry['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist() # all reactor ids that belong to institution n°instId	
-    				if capital.find('pace') is not None: #random parameters
-    					if capital.find('pace').text == "rapid":
-    						begin = [rapid_cap_begin] * len(id_reactors) + np.array(lst[j:j+len(id_reactors)])
-    						duration = [rapid_cap_duration] * len(id_reactors) + 2 * np.array(lst[j:j+len(id_reactors)])
-    					elif capital.find('pace').text == "slow":
-    						begin = [slow_cap_begin] * len(id_reactors) + np.array(lst[j:j+len(id_reactors)])
-    						duration = [slow_cap_duration] * len(id_reactors) + 2 * np.array(lst[j:j+len(id_reactors)])
-    					else: #normal
-    						begin = [default_cap_begin] * len(id_reactors) + np.array(lst[j:j+len(id_reactors)])
-    						duration = [default_cap_duration] * len(id_reactors) + 2 * np.array(lst[j:j+len(id_reactors)])
-    				else: #own parameters
-    					if capital.find('begin') is not None:
-    						begin = [int(capital.find('begin').text)] * len(id_reactors)
-    					else:
-    						begin = [default_cap_begin] * len(id_reactors)
-    					if capital.find('duration') is not None:
-    						duration = [int(capital.find('duration').text)] * len(id_reactors)
-    					else:
-    						duration = [default_cap_duration] * len(id_reactors)
-    				if capital.find('overnight_cost') is not None:
-    					overnight_cost = int(capital.find('overnight_cost').text)
-    				else:
-    					overnight_cost = default_cap_overnight
-    				if capital.find('shape') is not None:
-    					shape = capital.find('costs_shape').text
-    				else:
-    					shape = default_cap_shape
-    				j += len(id_reactors)
-    				cpt = 0
-    				for id in id_reactors:
-    					s_cost = capital_shape(int(begin[cpt]), int(duration[cpt]), shape)
-    					tmp = f_power[f_power.AgentId==id]
-    					f_entry.loc[id, 'Capacity'] = max(tmp['Value'])
-    					s_cost2 = np.around(s_cost * overnight_cost * f_entry.loc[id, 'Capacity'], 3)
-    					s_cost2 = s_cost2 * ((1 + discount_rate) ** math.ceil(duration[cpt] / 12) - 1) / (discount_rate * math.ceil(duration[cpt] / 12)) # to take into account interest (see ppt X "intérêts intercalaires" or "Appendix-A reactor-level analysis of busbar costs.pdf" in cost calculations folder)
-    					reactor_i_df = pd.DataFrame({'AgentId': id, 'Time': pd.Series(list(range(duration[cpt] + 1))) - begin[cpt] + f_entry.EnterTime[id], 'Payment' : s_cost2})
-    					rtn = pd.concat([rtn, reactor_i_df], ignore_index=True)
-    					cpt += 1	
-    	else:
-    		capital = root.find('capital')
-    		if capital.find('pace') is not None: #random parameters
-    			if capital.find('pace').text == "rapid":
-    				begin = [rapid_cap_begin] * len(id_reactors) + np.array(lst[j:j+len(id_reactors)])
-    				duration = [rapid_cap_duration] * len(id_reactors) + 2 * np.array(lst[j:j+len(id_reactors)])
-    			elif capital.find('pace').text == "slow":
-    				begin = [slow_cap_begin] * len(id_reactors) + np.array(lst[j:j+len(id_reactors)])
-    				duration = [slow_cap_duration] * len(id_reactors) + 2 * np.array(lst[j:j+len(id_reactors)])
-    			else: #normal
-    				begin = [default_cap_begin] * len(id_reactors) + np.array(lst[j:j+len(id_reactors)])
-    				duration = [default_cap_duration] * len(id_reactors) + 2 * np.array(lst[j:j+len(id_reactors)])
-    		else: #own parameters
-    			if capital.find('begin') is not None:
-    				begin = [int(capital.find('begin').text)] * len(id_reactors)
-    			else:
-    				begin = [default_cap_begin] * len(id_reactors)
-    			if capital.find('duration') is not None:
-    				duration = [int(capital.find('duration').text)] * len(id_reactors)
-    			else:
-    				duration = [default_cap_duration] * len(id_reactors)
-    		if capital.find('overnight_cost') is not None:
-    			overnight_cost = int(capital.find('overnight_cost').text)
-    		else:
-    			overnight_cost = default_cap_overnight
-    		if capital.find('shape') is not None:
-    			shape = capital.find('costs_shape').text
-    		else:
-    			shape = default_cap_shape
-    		j += len(id_reactors)
-    		cpt = 0
-    		for id in id_reactors:
-    			s_cost = capital_shape(int(begin[cpt]), int(duration[cpt]), shape)
-    			tmp = f_power[f_power.AgentId==id]
-    			f_entry.loc[id, 'Capacity'] = max(tmp['Value'])
-    			s_cost2 = np.around(s_cost * overnight_cost * f_entry.loc[id, 'Capacity'], 3)
-    			s_cost2 = s_cost2 * ((1 + discount_rate) ** math.ceil(duration[cpt] / 12) - 1) / (discount_rate * math.ceil(duration[cpt] / 12)) # to take into account interest (see ppt X "intérêts intercalaires" or "Appendix-A reactor-level analysis of busbar costs.pdf" in cost calculations folder)
-    			reactor_i_df = pd.DataFrame({'AgentId': id, 'Time': pd.Series(list(range(duration[cpt] + 1))) - begin[cpt] + f_entry.EnterTime[id], 'Payment' : s_cost2})
-    			rtn = pd.concat([rtn, reactor_i_df], ignore_index=True)
-    			cpt += 1
-    else:
-    	for id in id_reactors:
-    		s_cost = capital_shape(begin, duration, shape)
-    		tmp = f_power[f_power.AgentId==id]
-    		f_entry.loc[id, 'Capacity'] = max(tmp['Value'])
-    		s_cost2 = np.around(s_cost * overnight_cost * f_entry.loc[id, 'Capacity'], 3)
-    		s_cost2 = s_cost2 * ((1 + discount_rate) ** math.ceil(duration / 12) - 1) / (discount_rate * math.ceil(duration / 12)) # to take into account interest (see ppt X "intérêts intercalaires" or "Appendix-A reactor-level analysis of busbar costs.pdf" in cost calculations folder)
-    		reactor_i_df = pd.DataFrame({'AgentId': id, 'Time': pd.Series(list(range(duration + 1))) - begin + f_entry.EnterTime[id], 'Payment' : s_cost2})
-    		rtn = pd.concat([rtn, reactor_i_df], ignore_index=True)
+    	if 'REACTOR' in tmp.loc[id, ('Agent', 'Prototype')].upper():
+    		deviation = tmp.loc[id, ('Capital', 'Deviation')]
+    		variance = deviation ** 2
+    		deviation = np.random.poisson(variance) - variance
+    		begin = tmp.loc[id, ('Capital', 'Begin')] + deviation
+    		duration = tmp.loc[id, ('Capital', 'Duration')] + 2 * deviation
+    		overnightCost = tmp.loc[id, ('Capital', 'OvernightCost')]
+    		cashFlowShape = capital_shape(begin, duration)
+    		powerCapacity = max(f_power[f_power.AgentId==id]['Value'])
+    		discountRate = tmp.loc[id, ('Finance','DiscountRate')]
+    		cashFlow = np.around(cashFlowShape * overnightCost * powerCapacity, 3)
+    		cashFlow *= ((1 + discountRate) ** math.ceil(duration / 12) - 1) / (discountRate * math.ceil(duration / 12))
+    		tmp = pd.DataFrame({'AgentId': id, 'Time': pd.Series(list(range(duration + 1))) - begin + f_entry.EnterTime[id], 'Payment' : cashFlow})
+    		rtn = pd.concat([rtn, tmp], ignore_index=True)
     rtn['SimId'] = f_power['SimId'].iloc[0]
     subset = rtn.columns.tolist()
     subset = subset[3:] + subset[:1] + subset[2:3] + subset[1:2]
@@ -377,7 +196,7 @@ _eischema = [('AgentId', ts.INT), ('Prototype', ts.STRING), ('ParentId', ts.INT)
 def economic_info(series):
     """Write the economic parameters in the database
     """
-    tuples = [('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Agent', 'ParentId'), ('Finance','ReturnOnDebt'), ('Finance','ReturnOnEquity'), ('Finance','TaxRate'), ('Finance','DiscountRate'), ('Capital', 'Begin'), ('Capital', 'Duration'), ('Capital', 'Pace'), ('Capital', 'OvernightCost'), ('Decommissioning', 'Duration'), ('Decommissioning', 'OvernightCost'), ('OperationMaintenance', 'FixedCost'), ('OperationMaintenance', 'VariableCost'), ('Fuel', 'Cost'), ('Fuel', 'WasteFee'), ('Truncation', 'Begin'), ('Truncation', 'End')]
+    tuples = [('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Agent', 'ParentId'), ('Finance','ReturnOnDebt'), ('Finance','ReturnOnEquity'), ('Finance','TaxRate'), ('Finance','DiscountRate'), ('Capital', 'Begin'), ('Capital', 'Duration'), ('Capital', 'Deviation'), ('Capital', 'OvernightCost'), ('Decommissioning', 'Duration'), ('Decommissioning', 'OvernightCost'), ('OperationMaintenance', 'FixedCost'), ('OperationMaintenance', 'VariableCost'), ('Fuel', 'Cost'), ('Fuel', 'WasteFee'), ('Truncation', 'Begin'), ('Truncation', 'End')]
     index = pd.MultiIndex.from_tuples(tuples, names=['first', 'second'])
     rtn = pd.DataFrame(index=index)
     ser = pd.Series(False, index=['finance', 'capital', 'decommissioning', 'operationmMaintenance', 'fuel'])
@@ -404,7 +223,7 @@ def economic_info(series):
     	ser['capital'] = True
     	rtn.loc[:, ('Capital', 'Begin')] = int(capital.find('begin').text)
     	rtn.loc[:, ('Capital', 'Duration')] = int(capital.find('duration').text)
-    	rtn.loc[:, ('Capital', 'Pace')] = capital.find('pace').text
+    	rtn.loc[:, ('Capital', 'Deviation')] = float(capital.find('deviation').text)
     	rtn.loc[:, ('Capital', 'OvernightCost')] = int(capital.find('overnight_cost').text)
     decommissioning = root.find('decommissioning')
     if not decommissioning == None:
@@ -446,21 +265,21 @@ def economic_info(series):
     		if capital is not None:
     			begin = int(capital.find('begin').text)
     			duration = int(capital.find('duration').text)
-    			pace = capital.find('pace').text
+    			deviation = float(capital.find('deviation').text)
     			overnight_cost = int(capital.find('overnight_cost').text)
     			rtn.loc[agent_index[id_region], ('Capital', 'Begin')] = begin
     			rtn.loc[agent_index[id_region], ('Capital', 'Duration')] = duration
-    			rtn.loc[agent_index[id_region], ('Capital', 'Pace')] = pace
+    			rtn.loc[agent_index[id_region], ('Capital', 'Deviation')] = deviation
     			rtn.loc[agent_index[id_region], ('Capital', 'OvernightCost')] = overnight_cost
     			for id_institution in f_entry[f_entry.ParentId==id_region]['AgentId'].tolist():
     				rtn.loc[agent_index[id_institution], ('Capital', 'Begin')] = begin
     				rtn.loc[agent_index[id_institution], ('Capital', 'Duration')] = duration
-    				rtn.loc[agent_index[id_institution], ('Capital', 'Pace')] = pace
+    				rtn.loc[agent_index[id_institution], ('Capital', 'Deviation')] = deviation
     				rtn.loc[agent_index[id_institution], ('Capital', 'OvernightCost')] = overnight_cost
     				for id_reactor in f_entry[f_entry.ParentId==id_institution]['AgentId'].tolist():
     					rtn.loc[agent_index[id_reactor], ('Capital', 'Begin')] = begin
     					rtn.loc[agent_index[id_reactor], ('Capital', 'Duration')] = duration
-    					rtn.loc[agent_index[id_reactor], ('Capital', 'Pace')] = pace
+    					rtn.loc[agent_index[id_reactor], ('Capital', 'Deviation')] = deviation
     					rtn.loc[agent_index[id_reactor], ('Capital', 'OvernightCost')] = overnight_cost
     	if 'decommissioning' in ser[ser==False]:
     		decommissioning = region.find('decommissioning')
@@ -519,16 +338,16 @@ def economic_info(series):
     		if capital is not None:
     			begin = int(capital.find('begin').text)
     			duration = int(capital.find('duration').text)
-    			pace = capital.find('pace').text
+    			deviation = float(capital.find('deviation').text)
     			overnight_cost = int(capital.find('overnight_cost').text)
     			rtn.loc[agent_index[id_institution], ('Capital', 'Begin')] = begin
     			rtn.loc[agent_index[id_institution], ('Capital', 'Duration')] = duration
-    			rtn.loc[agent_index[id_institution], ('Capital', 'Pace')] = pace
+    			rtn.loc[agent_index[id_institution], ('Capital', 'Deviation')] = deviation
     			rtn.loc[agent_index[id_institution], ('Capital', 'OvernightCost')] = overnight_cost
     			for id_reactor in f_entry[f_entry.ParentId==id_institution]['AgentId'].tolist():
     				rtn.loc[agent_index[id_reactor], ('Capital', 'Begin')] = begin
     				rtn.loc[agent_index[id_reactor], ('Capital', 'Duration')] = duration
-    				rtn.loc[agent_index[id_reactor], ('Capital', 'Pace')] = pace
+    				rtn.loc[agent_index[id_reactor], ('Capital', 'Deviation')] = deviation
     				rtn.loc[agent_index[id_reactor], ('Capital', 'OvernightCost')] = overnight_cost
     		decommissioning = institution.find('decommissioning')
     		if decommissioning is not None:
@@ -563,7 +382,7 @@ def economic_info(series):
     			if capital is not None:
     				rtn.loc[agent_index[id_reactor], ('Capital', 'Begin')] = int(capital.find('begin').text)
     				rtn.loc[agent_index[id_reactor], ('Capital', 'Duration')] = int(capital.find('duration').text)
-    				rtn.loc[agent_index[id_reactor], ('Capital', 'Pace')] = capital.find('pace').text
+    				rtn.loc[agent_index[id_reactor], ('Capital', 'Deviation')] = float(capital.find('deviation').text)
     				rtn.loc[agent_index[id_reactor], ('Capital', 'OvernightCost')] = int(capital.find('overnight_cost').text)
     			operation_maintenance = reactor.find('operation_maintenance')
     			if operation_maintenance is not None:
