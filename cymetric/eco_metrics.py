@@ -72,6 +72,10 @@ def capital_cost(series):
     		begin = tmp.loc[('Capital', 'Begin')] + deviation
     		duration = tmp.loc[('Capital', 'Duration')] + 2 * deviation
     		overnightCost = tmp.loc[('Capital', 'OvernightCost')]
+    		print(begin) #test
+    		print(type(begin)) #test
+    		print(duration) #test
+    		print(type(duration)) #test
     		cashFlowShape = capital_shape(begin, duration)
     		powerCapacity = max(f_power[f_power.AgentId==id]['Value'])
     		discountRate = tmp.loc[('Finance','DiscountRate')]
