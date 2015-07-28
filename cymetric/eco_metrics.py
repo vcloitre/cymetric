@@ -68,7 +68,7 @@ def capital_cost(series):
     	if 'REACTOR' in tmp.loc[('Agent', 'Prototype')].upper():
     		deviation = tmp.loc[('Capital', 'Deviation')]
     		variance = deviation ** 2
-    		deviation = np.random.poisson(variance) - variance
+    		deviation = int(np.random.poisson(variance) - variance)
     		begin = tmp.loc[('Capital', 'Begin')] + deviation
     		duration = tmp.loc[('Capital', 'Duration')] + 2 * deviation
     		overnightCost = tmp.loc[('Capital', 'OvernightCost')]
