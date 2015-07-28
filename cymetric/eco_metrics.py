@@ -63,7 +63,7 @@ def capital_cost(series):
     #var=std**2
     f_entry = pd.DataFrame([f_entry.EnterTime, f_entry.AgentId]).transpose()
     f_entry = f_entry.set_index(['AgentId'])
-    agentIds = f_ecoi[('Agent', 'AgentId')].tolist()
+    agentIds = f_ecoi.index
     rtn = pd.DataFrame()
     for id in agentIds:
     	tmp = f_ecoi.loc[id]
