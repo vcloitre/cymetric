@@ -33,8 +33,12 @@ xml_inputs = 'parameters.xml' # temporary solution : always store an xml file in
 
 ## The actual metrics ##
 
+<begin></begin>  <!-- months before commissioning -->
+		<duration></duration>  <!-- duration of construction in months -->
+		<pace></pace>  <!-- "normal", "rapid" or "slow" -->
+		<overnight_cost></overnight_cost
 
-_ccdeps = [('TimeSeriesPower', ('SimId', 'AgentId', 'Value'), 'Time'), ('AgentEntry', ('AgentId', 'ParentId', 'Spec'), 'EnterTime'), ('Info', ('InitialYear', 'InitialMonth'), 'Duration')]
+_ccdeps = [('TimeSeriesPower', ('SimId', 'AgentId', 'Value'), 'Time'), ('AgentEntry', ('AgentId', 'ParentId', 'Spec'), 'EnterTime'), ('Info', ('InitialYear', 'InitialMonth'), 'Duration'), ('EconomicInfo', (('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Capital', 'Begin'), ('Capital', 'Duration'), ('Capital', 'Pace')), ('Capital', 'OvernightCost'))]
 
 _ccschema = [('SimId', ts.UUID), ('AgentId', ts.INT),
              ('Time', ts.INT), ('Payment', ts.DOUBLE)]
@@ -51,6 +55,8 @@ def capital_cost(series):
     f_power = series[0].reset_index()
     f_entry = series[1].reset_index()
     f_info = series[2].reset_index()
+    f_ecoi = series[3].reset_index()
+    f_ecoi = f_ecoi.set_index(('Agent', 'AgentId'))
     sim_duration = f_info['Duration'].iloc[0]
     tmp = f_entry[f_entry.Spec == ":cycamore:Reactor"]
     id_reactors = tmp["AgentId"].tolist()
@@ -67,11 +73,15 @@ def capital_cost(series):
     f_entry = f_entry.set_index(['AgentId'])
     f_entry['Capacity'] = pd.Series()
     rtn = pd.DataFrame()
-    begin = [default_cap_begin] * len(id_reactors)
-    duration = [default_cap_duration] * len(id_reactors)
-    discount_rate = default_discount_rate
-    shape = default_cap_shape
-    overnight_cost = default_cap_overnight
+    for id in agent_ids:
+    	tmp = f_ecoi.loc[id]
+    	if 'REACTOR' in tmp.loc[id, ('Agent','Prototype')].upper():
+    	begin = f_ecoi
+    	cashFlowShape = capital_shape(begin, duration, shape)
+    	tmp = f_power[f_power.AgentId==id]
+    	f_entry.loc[id, 'Capacity'] = max(tmp['Value'])
+    	s_cost2 = np.around(s_cost * overnight_cost * f_entry.loc[id, 'Capacity'], 3)
+    							s_cost2 = s_cost2 * ((1 + discount_rate) ** math.ceil(duration / 12) - 1) / (discount_rate * math.ceil(duration / 12))
     if os.path.isfile(xml_inputs):
     	tree = ET.parse(xml_inputs)
     	root = tree.getroot()
@@ -359,22 +369,22 @@ def operation_maintenance(series):
 del _omdeps, _omschema
 
 
-_eideps = [('AgentEntry', ('AgentId', 'Kind'), 'ParentId')]
+_eideps = [('AgentEntry', ('AgentId', 'Prototype'), 'ParentId')]
 
-_eischema = [('AgentId', ts.INT), ('Kind', ts.STRING), ('ParentId', ts.INT), ('BeginMonth', ts.INT), ('EndMonth', ts.INT), ('DiscountRate', ts.DOUBLE)]
+_eischema = [('AgentId', ts.INT), ('Prototype', ts.STRING), ('ParentId', ts.INT), ('BeginMonth', ts.INT), ('EndMonth', ts.INT), ('DiscountRate', ts.DOUBLE)]
 		
 @metric(name='EconomicInfo', depends=_eideps, schema=_eischema)
 def economic_info(series):
     """Write the economic parameters in the database
     """
-    tuples = [('Agent', 'Kind'), ('Agent', 'AgentId'), ('Agent', 'ParentId'), ('Finance','ReturnOnDebt'), ('Finance','ReturnOnEquity'), ('Finance','TaxRate'), ('Finance','DiscountRate'), ('Capital', 'Begin'), ('Capital', 'Duration'), ('Capital', 'Pace'), ('Capital', 'OvernightCost'), ('Decommissioning', 'Duration'), ('Decommissioning', 'OvernightCost'), ('OperationMaintenance', 'FixedCost'), ('OperationMaintenance', 'VariableCost'), ('Fuel', 'Cost'), ('Fuel', 'WasteFee'), ('Truncation', 'Begin'), ('Truncation', 'End')]
+    tuples = [('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Agent', 'ParentId'), ('Finance','ReturnOnDebt'), ('Finance','ReturnOnEquity'), ('Finance','TaxRate'), ('Finance','DiscountRate'), ('Capital', 'Begin'), ('Capital', 'Duration'), ('Capital', 'Pace'), ('Capital', 'OvernightCost'), ('Decommissioning', 'Duration'), ('Decommissioning', 'OvernightCost'), ('OperationMaintenance', 'FixedCost'), ('OperationMaintenance', 'VariableCost'), ('Fuel', 'Cost'), ('Fuel', 'WasteFee'), ('Truncation', 'Begin'), ('Truncation', 'End')]
     index = pd.MultiIndex.from_tuples(tuples, names=['first', 'second'])
     rtn = pd.DataFrame(index=index)
     ser = pd.Series(False, index=['finance', 'capital', 'decommissioning', 'operationmMaintenance', 'fuel'])
     f_entry = series[0].reset_index()
     agent_index = f_entry.reset_index().set_index('AgentId')['index']
     rtn = rtn.T
-    rtn[('Agent', 'Kind')] = f_entry['Kind']
+    rtn[('Agent', 'Prototype')] = f_entry['Prototype']
     rtn[('Agent', 'AgentId')] = f_entry['AgentId']
     rtn[('Agent', 'ParentId')] = f_entry['ParentId']
     xml_inputs = 'parameters.xml'
