@@ -26,10 +26,10 @@
 	</finance>
 
 	<capital>
-		<!--<mode></mode>  <!-- "default", "own" or "random" -->-->
+		<deviation></deviation>  <!-- random -->-->
 		<begin></begin>  <!-- months before commissioning -->
 		<duration></duration>  <!-- duration of construction in months -->
-		<pace></pace>  <!-- "normal", "rapid" or "slow" -->
+		<!--<pace></pace>  <!-- "normal", "rapid" or "slow" -->-->
 		<overnight_cost></overnight_cost>  <!-- $/MW -->
 	</capital>
 
