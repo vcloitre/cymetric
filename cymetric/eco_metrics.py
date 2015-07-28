@@ -69,10 +69,10 @@ def capital_cost(series):
     		deviation = tmp.loc[('Capital', 'Deviation')]
     		variance = deviation ** 2
     		deviation = np.random.poisson(variance) - variance
-    		begin = tmp.loc[('Capital', 'Begin')] + deviation
-    		duration = tmp.loc[('Capital', 'Duration')] + 2 * deviation
+    		begin = int(tmp.loc[('Capital', 'Begin')] + deviation)
+    		duration = int(tmp.loc[('Capital', 'Duration')] + 2 * deviation)
     		overnightCost = tmp.loc[('Capital', 'OvernightCost')]
-    		cashFlowShape = capital_shape(int(begin), int(duration))
+    		cashFlowShape = capital_shape(begin, duration)
     		powerCapacity = max(f_power[f_power.AgentId==id]['Value'])
     		discountRate = tmp.loc[('Finance','DiscountRate')]
     		cashFlow = np.around(cashFlowShape * overnightCost * powerCapacity, 3)
