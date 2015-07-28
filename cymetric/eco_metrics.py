@@ -52,7 +52,7 @@ def capital_cost(series):
     f_entry = series[1].reset_index()
     f_info = series[2].reset_index()
     f_ecoi = series[3].reset_index()
-    tuples = (('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Capital', 'Begin'), ('Capital', 'Duration'), ('Capital', 'Deviation'), ('Capital', 'OvernightCost'))
+    tuples = (('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Capital', 'Begin'), ('Capital', 'Duration'), ('Capital', 'Deviation'), ('Capital', 'OvernightCost'), ('Finance','DiscountRate'))
     index = pd.MultiIndex.from_tuples(tuples, names=['first', 'second'])
     f_ecoi.columns = index
     f_ecoi = f_ecoi.set_index(('Agent', 'AgentId'))
