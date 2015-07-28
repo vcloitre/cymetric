@@ -212,6 +212,7 @@ def economic_info(series):
     	rtn.loc[:, ('Finance', 'TaxRate')] = float(finance.find('tax_rate').text)
     	rtn.loc[:, ('Finance','ReturnOnDebt')] = float(finance.find('return_on_debt').text)
     	rtn.loc[:, ('Finance','ReturnOnEquity')] = float(finance.find('return_on_equity').text)
+    	rtn.loc[:, ('Finance','DiscountRate')] = float(finance.find('discount_rate').text)
     capital = root.find('capital')
     if not capital == None:
     	ser['capital'] = True
@@ -243,17 +244,21 @@ def economic_info(series):
     			return_on_debt = float(finance.find('return_on_debt').text)
     			return_on_equity = float(finance.find('return_on_equity').text)
     			tax_rate = float(finance.find('tax_rate').text)
+    			discountRate = float(finance.find('discount_rate').text)
     			rtn.loc[agent_index[id_region], ('Finance', 'TaxRate')] = tax_rate
     			rtn.loc[agent_index[id_region], ('Finance','ReturnOnDebt')] = return_on_debt
     			rtn.loc[agent_index[id_region],('Finance','ReturnOnEquity')] = return_on_equity
+    			rtn.loc[gent_index[id_region], ('Finance','DiscountRate')] = discountRate
     			for id_institution in f_entry[f_entry.ParentId==id_region]['AgentId'].tolist():
     				rtn.loc[agent_index[id_institution], ('Finance', 'TaxRate')] = tax_rate
     				rtn.loc[agent_index[id_institution], ('Finance','ReturnOnDebt')] = return_on_debt
     				rtn.loc[agent_index[id_institution], ('Finance','ReturnOnEquity')] = return_on_equity
+    				rtn.loc[gent_index[id_institution], ('Finance','DiscountRate')] = discountRate
     				for id_reactor in f_entry[f_entry.ParentId==id_institution]['AgentId'].tolist():
     					rtn.loc[agent_index[id_reactor], ('Finance', 'TaxRate')] = tax_rate
     					rtn.loc[agent_index[id_reactor], ('Finance','ReturnOnDebt')] = return_on_debt
     					rtn.loc[agent_index[id_reactor], ('Finance','ReturnOnEquity')] = return_on_equity
+    					rtn.loc[gent_index[id_reactor], ('Finance','DiscountRate')] = discountRate
     	if 'capital' in ser[ser==False]:
     		capital = region.find('capital')
     		if capital is not None:
