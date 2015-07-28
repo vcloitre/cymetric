@@ -57,8 +57,6 @@ def capital_cost(series):
     f_ecoi.columns = index
     f_ecoi = f_ecoi.set_index(('Agent', 'AgentId'))
     simDuration = f_info['Duration'].iloc[0]
-    tmp = f_entry[f_entry.Spec == ":cycamore:Reactor"]
-    id_reactors = tmp["AgentId"].tolist()
     #std=3.507*12
     #var=std**2
     f_entry = pd.DataFrame([f_entry.EnterTime, f_entry.AgentId]).transpose()
@@ -67,16 +65,16 @@ def capital_cost(series):
     rtn = pd.DataFrame()
     for id in agentIds:
     	tmp = f_ecoi.loc[id]
-    	if 'REACTOR' in tmp.loc[id, ('Agent', 'Prototype')].upper():
-    		deviation = tmp.loc[id, ('Capital', 'Deviation')]
+    	if 'REACTOR' in tmp.loc[('Agent', 'Prototype')].upper():
+    		deviation = tmp.loc[('Capital', 'Deviation')]
     		variance = deviation ** 2
     		deviation = np.random.poisson(variance) - variance
-    		begin = tmp.loc[id, ('Capital', 'Begin')] + deviation
-    		duration = tmp.loc[id, ('Capital', 'Duration')] + 2 * deviation
-    		overnightCost = tmp.loc[id, ('Capital', 'OvernightCost')]
+    		begin = tmp.loc[('Capital', 'Begin')] + deviation
+    		duration = tmp.loc[('Capital', 'Duration')] + 2 * deviation
+    		overnightCost = tmp.loc[('Capital', 'OvernightCost')]
     		cashFlowShape = capital_shape(begin, duration)
     		powerCapacity = max(f_power[f_power.AgentId==id]['Value'])
-    		discountRate = tmp.loc[id, ('Finance','DiscountRate')]
+    		discountRate = tmp.loc[('Finance','DiscountRate')]
     		cashFlow = np.around(cashFlowShape * overnightCost * powerCapacity, 3)
     		cashFlow *= ((1 + discountRate) ** math.ceil(duration / 12) - 1) / (discountRate * math.ceil(duration / 12))
     		tmp = pd.DataFrame({'AgentId': id, 'Time': pd.Series(list(range(duration + 1))) - begin + f_entry.EnterTime[id], 'Payment' : cashFlow})
