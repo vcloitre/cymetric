@@ -25,7 +25,10 @@ def dbopen(fname):
 
 def raw_to_series(df, idx, val):
     """Convert data frame to series with multi-index."""
-    d = df.set_index(list(map(str, idx)))
+    if isinstance(idx[0], tuple):
+        d = df.set_index(list(map(tuple, idx)))
+    else:
+        d = df.set_index(list(map(str, idx)))
     s = df[val].copy()
     s.index = d.index
     return s
