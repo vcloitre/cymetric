@@ -34,7 +34,7 @@ xml_inputs = 'parameters.xml' # temporary solution : always store an xml file in
 ## The actual metrics ##
 
 
-_ccdeps = [('TimeSeriesPower', ('SimId', 'AgentId', 'Value'), 'Time'), ('AgentEntry', ('AgentId', 'ParentId', 'Spec'), 'EnterTime'), ('Info', ('InitialYear', 'InitialMonth'), 'Duration'), ('EconomicInfo', (('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Capital', 'Begin'), ('Capital', 'Duration'), ('Capital', 'Deviation')), ('Capital', 'OvernightCost'), ('Finance','DiscountRate'))]
+_ccdeps = [('TimeSeriesPower', ('SimId', 'AgentId', 'Value'), 'Time'), ('AgentEntry', ('AgentId', 'ParentId', 'Spec'), 'EnterTime'), ('Info', ('InitialYear', 'InitialMonth'), 'Duration'), ('EconomicInfo', (('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Capital', 'Begin'), ('Capital', 'Duration'), ('Capital', 'Deviation'), ('Capital', 'OvernightCost')), ('Finance','DiscountRate'))]
 
 _ccschema = [('SimId', ts.UUID), ('AgentId', ts.INT),
              ('Time', ts.INT), ('Payment', ts.DOUBLE)]
@@ -52,24 +52,20 @@ def capital_cost(series):
     f_entry = series[1].reset_index()
     f_info = series[2].reset_index()
     f_ecoi = series[3].reset_index()
+    tuples = (('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Capital', 'Begin'), ('Capital', 'Duration'), ('Capital', 'Deviation'), ('Capital', 'OvernightCost'))
+    index = pd.MultiIndex.from_tuples(tuples, names=['first', 'second'])
+    f_ecoi.columns = index
     f_ecoi = f_ecoi.set_index(('Agent', 'AgentId'))
-    sim_duration = f_info['Duration'].iloc[0]
+    simDuration = f_info['Duration'].iloc[0]
     tmp = f_entry[f_entry.Spec == ":cycamore:Reactor"]
     id_reactors = tmp["AgentId"].tolist()
-    # lst = 12 * np.random.randn(len(id_reactors))
-    #lst *= lst > 0 # we only consider delays (positive values), no head start (negative values)
-    #lst = list(map(int,lst))
-    std=3.507*12
-    var=std**2
-    lst = np.random.poisson(var, len(id_reactors))
-    lst -= var
-    lst += 10000 * (lst < -70)
-    j = 0
-    f_entry = pd.DataFrame([f_entry.EnterTime, f_entry.AgentId, f_entry.ParentId, f_entry.Spec]).transpose()
+    #std=3.507*12
+    #var=std**2
+    f_entry = pd.DataFrame([f_entry.EnterTime, f_entry.AgentId]).transpose()
     f_entry = f_entry.set_index(['AgentId'])
-    f_entry['Capacity'] = pd.Series()
+    agentIds = f_ecoi[('Agent', 'AgentId')].tolist()
     rtn = pd.DataFrame()
-    for id in agent_ids:
+    for id in agentIds:
     	tmp = f_ecoi.loc[id]
     	if 'REACTOR' in tmp.loc[id, ('Agent', 'Prototype')].upper():
     		deviation = tmp.loc[id, ('Capital', 'Deviation')]
@@ -89,7 +85,7 @@ def capital_cost(series):
     subset = rtn.columns.tolist()
     subset = subset[3:] + subset[:1] + subset[2:3] + subset[1:2]
     rtn = rtn[subset]
-    rtn = rtn[rtn['Time'].apply(lambda x: x >= 0 and x < sim_duration)]
+    rtn = rtn[rtn['Time'].apply(lambda x: x >= 0 and x < simDuration)]
     rtn = rtn.reset_index()
     del rtn['index']
     return rtn
