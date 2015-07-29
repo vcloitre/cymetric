@@ -247,6 +247,8 @@ def economic_info(series):
     	for type in fuel.findall('type'):
     		supply[type.find('name').text] = int(type.find('supply_cost').text)
     		waste[type.find('name').text] = int(type.find('waste_fee').text)
+    	supply = tools.hashabledict(supply)
+    	waste = tools.hashabledict(waste)
     	for j in rtn.index:
     		dfSupply.loc[j, 'SupplyCost'] = supply
     		dfWaste.loc[j, 'WasteFee'] = waste
@@ -326,6 +328,8 @@ def economic_info(series):
     		for type in fuel.findall('type'):
     			supply[type.find('name').text] = int(type.find('supply_cost').text)
     			waste[type.find('name').text] = int(type.find('waste_fee').text)
+    		supply = tools.hashabledict(supply)
+    		waste = tools.hashabledict(waste)
     		dfSupply.loc[agentIndex[idRegion], 'SupplyCost'] = supply
     		dfWaste.loc[agentIndex[idRegion], 'WasteFee'] = waste
     		rtn.loc[agentIndex[idRegion], ('Fuel', 'SupplyCost')] = dfSupply.loc[agentIndex[idRegion], 'SupplyCost']
@@ -397,6 +401,8 @@ def economic_info(series):
     			for type in supply.findall('type'):
     				supply[type.find('name').text] = int(type.find('supply_cost').text)
     				waste[type.find('name').text] = int(type.find('waste_fee').text)
+    			supply = tools.hashabledict(supply)
+    			waste = tools.hashabledict(waste)
     			dfSupply.loc[agentIndex[idInstitution], 'SupplyCost'] = supply
     			dfWaste.loc[agentIndex[idInstitution], 'WasteFee'] = waste
     			rtn.loc[agentIndex[idInstitution], ('Fuel', 'SupplyCost')] = dfSupply.loc[agentIndex[idInstitution], 'SupplyCost']
@@ -425,6 +431,8 @@ def economic_info(series):
     				for type in supply.findall('type'):
     					supply[type.find('name').text] = int(type.find('supply_cost').text)
     					waste[type.find('name').text] = int(type.find('waste_fee').text)
+    				supply = tools.hashabledict(supply)
+    				waste = tools.hashabledict(waste)
     				dfSupply.loc[agentIndex[idReactor], 'SupplyCost'] = supply
     				dfWaste.loc[agentIndex[idReactor], 'WasteFee'] = waste
     				rtn.loc[agentIndex[idReactor], ('Fuel', 'SupplyCost')] = dfSupply.loc[agentIndex[idReactor], 'SupplyCost']
