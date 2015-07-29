@@ -116,11 +116,8 @@ def fuel_cost(series):
     dfTransactions['Quantity'] = dfResources['Quantity']
     dfTransactions['Payment'] = pd.Series()
     dfTransactions['Payment'] = dfTransactions['Payment'].fillna(0)
-    print(dfEcoInfo) # test
     for agentId in dfEcoInfo.index:
     	tmpInfo = dfEcoInfo.loc[agentId]
-    	print(tmpInfo) # test
-    	print(tmpInfo[('Fuel', 'SupplyCost')]) # test
     	tmpTrans = dfTransactions[dfTransactions.ReceiverId==agentId]
     	for commod in tmpInfo[('Fuel', 'SupplyCost')]:
     		price = tmpInfo[('Fuel', 'SupplyCost')][commod]
@@ -139,7 +136,7 @@ del _fcdeps, _fcschema
 
 _dcdeps = [ ('TimeSeriesPower', ('SimId', 'AgentId'), 'Value'),
 			('AgentEntry', ('EnterTime', 'Lifetime', 'AgentId'), 'Spec'),
-			('Info', ('InitialYear', 'InitialMonth'), 'Duration')]
+			('Info', ('InitialYear', 'InitialMonth'), 'Duration'), ('EconomicInfo', (('Agent', 'AgentId'), ('Decommissioning', 'Duration')), ('Decommissioning', 'OvernightCost'))]
 
 _dcschema = [('SimId', ts.UUID), ('AgentId', ts.INT), ('Payment',
           ts.DOUBLE), ('Time', ts.INT)]
@@ -148,29 +145,37 @@ _dcschema = [('SimId', ts.UUID), ('AgentId', ts.INT), ('Payment',
 def decommissioning_cost(series):
     """decom
     """
-    cost = 750000 # decommission cost in $/MW d'Haeseler
-    duration = 150 # decommission lasts about 15 yrs
+    # cost = 750000 # decommission cost in $/MW d'Haeseler
+    # duration = 150 # decommission lasts about 15 yrs
     if series[0].empty:
     	return pd.DataFrame()
     dfPower = series[0].reset_index()
     dfPower = dfPower[dfPower['Value'].apply(lambda x: x > 0)]
     dfEntry = series[1].reset_index()
     dfInfo = series[2].reset_index()
-    sim_duration = dfInfo['Duration'].iloc[0]
-    dfEntry = dfEntry[(dfEntry['EnterTime'] + dfEntry['Lifetime']).apply(lambda x: x < sim_duration)] # only reactors that will be decommissioned
-    id_reactors = dfEntry[dfEntry['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist()
+    tuples = (('Agent', 'AgentId'), ('Decommissioning', 'Duration'), ('Decommissioning', 'OvernightCost'))
+    index = pd.MultiIndex.from_tuples(tuples, names=['first', 'second'])
+    dfEcoInfo.columns = index
+    dfEcoInfo = dfEcoInfo.set_index(('Agent', 'AgentId'))
+    simDuration = dfInfo['Duration'].iloc[0]
+    dfEntry = dfEntry[dfEntry['Lifetime'].apply(lambda x: x > 0)]
+    dfEntry = dfEntry[(dfEntry['EnterTime'] + dfEntry['Lifetime']).apply(lambda x: x < simDuration)] # only reactors that will be decommissioned
+    reactorsId = dfEntry[dfEntry['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist()
     rtn = pd.DataFrame()
-    for i in id_reactors:
-        s_cost = capital_shape(duration // 2, duration-1, 'triangle')
-        s_cost = s_cost * dfPower[dfPower.AgentId==i]['Value'].iloc[0] * cost
-        entrytime = dfEntry[dfEntry.AgentId==i]['EnterTime'].iloc[0]
-        lifetime = dfEntry[dfEntry.AgentId==i]['Lifetime'].iloc[0]
-        rtn = pd.concat([rtn,pd.DataFrame({'AgentId': i, 'Time': list(range(lifetime + entrytime, lifetime + entrytime + duration)), 'Payment': s_cost})], ignore_index=True)
+    for id in reactorsId:
+    	duration = dfEcoInfo.loc[id, ('Decommissioning', 'Duration')]
+    	overnightCost = dfEcoInfo.loc[id, ('Decommissioning', 'OvernightCost')]
+        cashFlowShape = capital_shape(duration // 2, duration-1)
+        powerCapacity = dfPower[dfPower.AgentId==i]['Value'].iloc[0]
+        cashFlow = cashFlowShape * powerCapacity * overnightCost
+        entryTime = dfEntry[dfEntry.AgentId==id]['EnterTime'].iloc[0]
+        lifetime = dfEntry[dfEntry.AgentId==id]['Lifetime'].iloc[0]
+        rtn = pd.concat([rtn,pd.DataFrame({'AgentId': id, 'Time': list(range(lifetime + entryTime, lifetime + entryTime + duration)), 'Payment': cashFlow})], ignore_index=True)
     rtn['SimId'] = dfPower['SimId'].iloc[0]
     subset = rtn.columns.tolist()
     subset = subset[-1:]+subset[:-1]
     rtn = rtn[subset]
-    return rtn[rtn['Time'].apply(lambda x: x >= 0 and x < sim_duration)]
+    return rtn[rtn['Time'].apply(lambda x: x >= 0 and x < simDuration)]
 
 del _dcdeps, _dcschema
 
