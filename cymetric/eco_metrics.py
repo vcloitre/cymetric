@@ -229,6 +229,10 @@ def economic_info(series):
     	rtn.loc[:, ('OperationMaintenance', 'FixedCost')] = int(operation_maintenance.find('fixed').text)
     	rtn.loc[:, ('OperationMaintenance', 'VariableCost')] = int(operation_maintenance.find('variable').text)
     fuel = root.find('fuel')
+    dfSupply = pd.DataFrame(index=rtn.index)
+    dfSupply[('Fuel', 'SupplyCost')] = pd.Series()
+    dfWaste = pd.DataFrame(index=rtn.index)
+    dfWaste[('Fuel', 'WasteFee')] = pd.Series()
     if not fuel == None:
     	supply = {}
     	waste = {}
@@ -239,8 +243,10 @@ def economic_info(series):
     		print(rtn)#test
     		print(rtn.loc[j, ('Fuel', 'SupplyCost')])#test
     		print(supply)#test
-    		rtn.loc[j, ('Fuel', 'SupplyCost')] = supply
-    		rtn.loc[j, ('Fuel', 'WasteFee')] = waste
+    		dfSupply[j, ('Fuel', 'SupplyCost')] = supply
+    		dfWaste[j, ('Fuel', 'WasteFee')] = waste
+    	rtn.loc[:, ('Fuel', 'SupplyCost')] = dfSupply[:, ('Fuel', 'SupplyCost')]
+    	rtn.loc[:, ('Fuel', 'WasteFee')] = dfWaste[:, ('Fuel', 'WasteFee')]
     # discount rate is only possible at sim or reg level
     for region in root.findall('region'):
     	idRegion = int(region.find('id').text)
