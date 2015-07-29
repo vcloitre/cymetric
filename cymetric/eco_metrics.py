@@ -230,9 +230,9 @@ def economic_info(series):
     	rtn.loc[:, ('OperationMaintenance', 'VariableCost')] = int(operation_maintenance.find('variable').text)
     fuel = root.find('fuel')
     dfSupply = pd.DataFrame(index=rtn.index)
-    dfSupply[('Fuel', 'SupplyCost')] = pd.Series()
+    dfSupply['SupplyCost'] = pd.Series()
     dfWaste = pd.DataFrame(index=rtn.index)
-    dfWaste[('Fuel', 'WasteFee')] = pd.Series()
+    dfWaste['WasteFee'] = pd.Series()
     if not fuel == None:
     	supply = {}
     	waste = {}
@@ -243,13 +243,12 @@ def economic_info(series):
     		print(rtn)#test
     		print(rtn.loc[j, ('Fuel', 'SupplyCost')])#test
     		print(supply)#test
-    		dfSupply.loc[j, ('Fuel', 'SupplyCost')] = supply
-    		rtn.loc[j, ('Fuel', 'SupplyCost')] = supply
-    		dfWaste.loc[j, ('Fuel', 'WasteFee')] = waste
+    		dfSupply.loc[j, 'SupplyCost'] = supply
+    		dfWaste.loc[j, 'WasteFee'] = waste
     	print(rtn.loc[:, ('Fuel', 'SupplyCost')])#test
     	print(dfSupply.loc[:, ('Fuel', 'SupplyCost')])#test
-    	rtn.loc[:, ('Fuel', 'SupplyCost')] = dfSupply.loc[:, ('Fuel', 'SupplyCost')]
-    	rtn.loc[:, ('Fuel', 'WasteFee')] = dfWaste.loc[:, ('Fuel', 'WasteFee')]
+    	rtn.loc[:, ('Fuel', 'SupplyCost')] = dfSupply.loc[:, 'SupplyCost']
+    	rtn.loc[:, ('Fuel', 'WasteFee')] = dfWaste.loc[:, 'WasteFee']
     # discount rate is only possible at sim or reg level
     for region in root.findall('region'):
     	idRegion = int(region.find('id').text)
