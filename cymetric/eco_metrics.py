@@ -152,7 +152,8 @@ def decommissioning_cost(series):
     dfPower = series[0].reset_index()
     dfPower = dfPower[dfPower['Value'].apply(lambda x: x > 0)]
     dfEntry = series[1].reset_index()
-    dfEcoInfo = series[2].reset_index()
+    dfInfo = series[2].reset_index()
+    dfEcoInfo = series[3].reset_index()
     tuples = (('Agent', 'AgentId'), ('Decommissioning', 'Duration'), ('Decommissioning', 'OvernightCost'))
     index = pd.MultiIndex.from_tuples(tuples, names=['first', 'second'])
     dfEcoInfo.columns = index
