@@ -48,23 +48,23 @@ def capital_cost(series):
     make the price depends on the reactor technology and make the payment more 
     realistic, ie include interest rates, improve the linear model and finally 
     be able to fetch data"""
-    f_power = series[0].reset_index()
-    f_entry = series[1].reset_index()
-    f_info = series[2].reset_index()
-    f_ecoi = series[3].reset_index()
+    dfPower = series[0].reset_index()
+    dfEntry = series[1].reset_index()
+    dfInfo = series[2].reset_index()
+    dfEcoInfo = series[3].reset_index()
     tuples = (('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Capital', 'Begin'), ('Capital', 'Duration'), ('Capital', 'Deviation'), ('Capital', 'OvernightCost'), ('Finance','DiscountRate'))
     index = pd.MultiIndex.from_tuples(tuples, names=['first', 'second'])
-    f_ecoi.columns = index
-    f_ecoi = f_ecoi.set_index(('Agent', 'AgentId'))
-    simDuration = f_info['Duration'].iloc[0]
+    dfEcoInfo.columns = index
+    dfEcoInfo = dfEcoInfo.set_index(('Agent', 'AgentId'))
+    simDuration = dfInfo['Duration'].iloc[0]
     #std=3.507*12
     #var=std**2
-    f_entry = pd.DataFrame([f_entry.EnterTime, f_entry.AgentId]).transpose()
-    f_entry = f_entry.set_index(['AgentId'])
-    agentIds = f_ecoi.index
+    dfEntry = pd.DataFrame([dfEntry.EnterTime, dfEntry.AgentId]).transpose()
+    dfEntry = dfEntry.set_index(['AgentId'])
+    agentIds = dfEcoInfo.index
     rtn = pd.DataFrame()
     for id in agentIds:
-    	tmp = f_ecoi.loc[id]
+    	tmp = dfEcoInfo.loc[id]
     	if 'REACTOR' in tmp.loc[('Agent', 'Prototype')].upper():
     		deviation = tmp.loc[('Capital', 'Deviation')]
     		variance = deviation ** 2
@@ -73,13 +73,13 @@ def capital_cost(series):
     		duration = int(tmp.loc[('Capital', 'Duration')] + 2 * deviation)
     		overnightCost = tmp.loc[('Capital', 'OvernightCost')]
     		cashFlowShape = capital_shape(begin, duration)
-    		powerCapacity = max(f_power[f_power.AgentId==id]['Value'])
+    		powerCapacity = max(dfPower[dfPower.AgentId==id]['Value'])
     		discountRate = tmp.loc[('Finance','DiscountRate')]
     		cashFlow = np.around(cashFlowShape * overnightCost * powerCapacity, 3)
     		cashFlow *= ((1 + discountRate) ** math.ceil(duration / 12) - 1) / (discountRate * math.ceil(duration / 12))
-    		tmp = pd.DataFrame({'AgentId': id, 'Time': pd.Series(list(range(duration + 1))) - begin + f_entry.EnterTime[id], 'Payment' : cashFlow})
+    		tmp = pd.DataFrame({'AgentId': id, 'Time': pd.Series(list(range(duration + 1))) - begin + dfEntry.EnterTime[id], 'Payment' : cashFlow})
     		rtn = pd.concat([rtn, tmp], ignore_index=True)
-    rtn['SimId'] = f_power['SimId'].iloc[0]
+    rtn['SimId'] = dfPower['SimId'].iloc[0]
     subset = rtn.columns.tolist()
     subset = subset[3:] + subset[:1] + subset[2:3] + subset[1:2]
     rtn = rtn[subset]
@@ -107,16 +107,21 @@ def fuel_cost(series):
     # fuel_price = 2360 # $/kg
     # see http://www.world-nuclear.org/info/Economic-Aspects/Economics-of-Nuclear-Power/
     # need to add a dictionnary with diff commodities and prices (uox, wast etc..)
-    f_resources = series[0].reset_index().set_index(['ResourceId'])
-    f_transactions = series[1].reset_index().set_index(['ResourceId'])
-    f_ecoi = series[2].reset_index().set_index('AgentId')
-    for agentId in f_ecoi.index:
-    	tmp = f_ecoi.loc[agentId]
-    f_transactions['Quantity'] = f_resources['Quantity']
-    f_transactions['Payment'] = f_transactions['Quantity'] * fuel_price
-    # * (f_transactions['Commodity']=='uox' or f_transactions['Commodity']=='mox')
-    del f_transactions['Quantity']
-    rtn = f_transactions.reset_index()
+    dfResources = series[0].reset_index().set_index(['ResourceId'])
+    dfTransactions = series[1].reset_index().set_index(['ResourceId'])
+    dfEcoInfo = series[2].reset_index().set_index(('Agent', 'AgentId'))
+    dfTransactions['Quantity'] = dfResources['Quantity']
+    dfTransactions['Payment'] = pd.Series()
+    dfTransactions['Payment'] = dfTransactions['Payment'].fillna(0)
+    for agentId in dfEcoInfo.index:
+        tmpInfo = dfEcoInfo.loc[agentId]
+        tmpTrans = dfTransactions[dfTransactions.ReceiverId==agentId]
+    	for commod in tmpInfo[('Fuel', 'SupplyCost')]:
+    		price = tmpInfo[('Fuel', 'SupplyCost')][commod]
+    		tmpTrans[tmpTrans.Commodity==commod].loc[:, 'Payment'] = tmpTrans[tmpTrans.Commodity==commod].loc[:, 'Quantity'] * price
+    	dfTransactions[dfTransactions.ReceiverId==agentId].loc[:, 'Payment'] = tmpTrans.loc[:, 'Payment']
+    del dfTransactions['Quantity']
+    rtn = dfTransactions.reset_index()
     subset = rtn.columns.tolist()
     subset = subset[1:5]+subset[6:]+subset[5:6]
     rtn = rtn[subset]
@@ -141,21 +146,21 @@ def decommissioning_cost(series):
     duration = 150 # decommission lasts about 15 yrs
     if series[0].empty:
     	return pd.DataFrame()
-    f_power = series[0].reset_index()
-    f_power = f_power[f_power['Value'].apply(lambda x: x > 0)]
-    f_entry = series[1].reset_index()
-    f_info = series[2].reset_index()
-    sim_duration = f_info['Duration'].iloc[0]
-    f_entry = f_entry[(f_entry['EnterTime'] + f_entry['Lifetime']).apply(lambda x: x < sim_duration)] # only reactors that will be decommissioned
-    id_reactors = f_entry[f_entry['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist()
+    dfPower = series[0].reset_index()
+    dfPower = dfPower[dfPower['Value'].apply(lambda x: x > 0)]
+    dfEntry = series[1].reset_index()
+    dfInfo = series[2].reset_index()
+    sim_duration = dfInfo['Duration'].iloc[0]
+    dfEntry = dfEntry[(dfEntry['EnterTime'] + dfEntry['Lifetime']).apply(lambda x: x < sim_duration)] # only reactors that will be decommissioned
+    id_reactors = dfEntry[dfEntry['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist()
     rtn = pd.DataFrame()
     for i in id_reactors:
         s_cost = capital_shape(duration // 2, duration-1, 'triangle')
-        s_cost = s_cost * f_power[f_power.AgentId==i]['Value'].iloc[0] * cost
-        entrytime = f_entry[f_entry.AgentId==i]['EnterTime'].iloc[0]
-        lifetime = f_entry[f_entry.AgentId==i]['Lifetime'].iloc[0]
+        s_cost = s_cost * dfPower[dfPower.AgentId==i]['Value'].iloc[0] * cost
+        entrytime = dfEntry[dfEntry.AgentId==i]['EnterTime'].iloc[0]
+        lifetime = dfEntry[dfEntry.AgentId==i]['Lifetime'].iloc[0]
         rtn = pd.concat([rtn,pd.DataFrame({'AgentId': i, 'Time': list(range(lifetime + entrytime, lifetime + entrytime + duration)), 'Payment': s_cost})], ignore_index=True)
-    rtn['SimId'] = f_power['SimId'].iloc[0]
+    rtn['SimId'] = dfPower['SimId'].iloc[0]
     subset = rtn.columns.tolist()
     subset = subset[-1:]+subset[:-1]
     rtn = rtn[subset]
@@ -196,12 +201,12 @@ def economic_info(series):
     tuples = [('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Agent', 'ParentId'), ('Finance','ReturnOnDebt'), ('Finance','ReturnOnEquity'), ('Finance','TaxRate'), ('Finance','DiscountRate'), ('Capital', 'Begin'), ('Capital', 'Duration'), ('Capital', 'Deviation'), ('Capital', 'OvernightCost'), ('Decommissioning', 'Duration'), ('Decommissioning', 'OvernightCost'), ('OperationMaintenance', 'FixedCost'), ('OperationMaintenance', 'VariableCost'), ('Fuel', 'SupplyCost'), ('Fuel', 'WasteFee'), ('Truncation', 'Begin'), ('Truncation', 'End')]
     index = pd.MultiIndex.from_tuples(tuples, names=['first', 'second'])
     rtn = pd.DataFrame(index=index)
-    f_entry = series[0].reset_index()
-    agentIndex = f_entry.reset_index().set_index('AgentId')['index']
+    dfEntry = series[0].reset_index()
+    agentIndex = dfEntry.reset_index().set_index('AgentId')['index']
     rtn = rtn.T
-    rtn[('Agent', 'Prototype')] = f_entry['Prototype']
-    rtn[('Agent', 'AgentId')] = f_entry['AgentId']
-    rtn[('Agent', 'ParentId')] = f_entry['ParentId']
+    rtn[('Agent', 'Prototype')] = dfEntry['Prototype']
+    rtn[('Agent', 'AgentId')] = dfEntry['AgentId']
+    rtn[('Agent', 'ParentId')] = dfEntry['ParentId']
     parametersInput = 'parameters.xml'
     tree = ET.parse(parametersInput)
     root = tree.getroot()
@@ -257,12 +262,12 @@ def economic_info(series):
     		rtn.loc[agentIndex[idRegion], ('Finance','ReturnOnDebt')] = returnOnDebt
     		rtn.loc[agentIndex[idRegion],('Finance','ReturnOnEquity')] = returnOnEquity
     		rtn.loc[gent_index[idRegion], ('Finance','DiscountRate')] = discountRate
-    		for idInstitution in f_entry[f_entry.ParentId==idRegion]['AgentId'].tolist():
+    		for idInstitution in dfEntry[dfEntry.ParentId==idRegion]['AgentId'].tolist():
     			rtn.loc[agentIndex[idInstitution], ('Finance', 'TaxRate')] = taxRate
     			rtn.loc[agentIndex[idInstitution], ('Finance','ReturnOnDebt')] = returnOnDebt
     			rtn.loc[agentIndex[idInstitution], ('Finance','ReturnOnEquity')] = returnOnEquity
     			rtn.loc[gent_index[idInstitution], ('Finance','DiscountRate')] = discountRate
-    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    			for idReactor in dfEntry[dfEntry.ParentId==idInstitution]['AgentId'].tolist():
     				rtn.loc[agentIndex[idReactor], ('Finance', 'TaxRate')] = taxRate
     				rtn.loc[agentIndex[idReactor], ('Finance','ReturnOnDebt')] = returnOnDebt
     				rtn.loc[agentIndex[idReactor], ('Finance','ReturnOnEquity')] = returnOnEquity
@@ -277,12 +282,12 @@ def economic_info(series):
     		rtn.loc[agentIndex[idRegion], ('Capital', 'Duration')] = duration
     		rtn.loc[agentIndex[idRegion], ('Capital', 'Deviation')] = deviation
     		rtn.loc[agentIndex[idRegion], ('Capital', 'OvernightCost')] = overnightCost
-    		for idInstitution in f_entry[f_entry.ParentId==idRegion]['AgentId'].tolist():
+    		for idInstitution in dfEntry[dfEntry.ParentId==idRegion]['AgentId'].tolist():
     			rtn.loc[agentIndex[idInstitution], ('Capital', 'Begin')] = begin
     			rtn.loc[agentIndex[idInstitution], ('Capital', 'Duration')] = duration
     			rtn.loc[agentIndex[idInstitution], ('Capital', 'Deviation')] = deviation
     			rtn.loc[agentIndex[idInstitution], ('Capital', 'OvernightCost')] = overnightCost
-    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    			for idReactor in dfEntry[dfEntry.ParentId==idInstitution]['AgentId'].tolist():
     				rtn.loc[agentIndex[idReactor], ('Capital', 'Begin')] = begin
     				rtn.loc[agentIndex[idReactor], ('Capital', 'Duration')] = duration
     				rtn.loc[agentIndex[idReactor], ('Capital', 'Deviation')] = deviation
@@ -293,10 +298,10 @@ def economic_info(series):
     		overnightCost = int(decommissioning.find('overnight_cost').text)
     		rtn.loc[agentIndex[idRegion], ('Decommissioning', 'Duration')] = duration
     		rtn.loc[agentIndex[idRegion], ('Decommissioning', 'OvernightCost')] = overnightCost
-    		for idInstitution in f_entry[f_entry.ParentId==idRegion]['AgentId'].tolist():
+    		for idInstitution in dfEntry[dfEntry.ParentId==idRegion]['AgentId'].tolist():
     			rtn.loc[agentIndex[idInstitution], ('Decommissioning', 'Duration')] = duration
     			rtn.loc[agentIndex[idInstitution], ('Decommissioning', 'OvernightCost')] = overnightCost
-    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    			for idReactor in dfEntry[dfEntry.ParentId==idInstitution]['AgentId'].tolist():
     				rtn.loc[agentIndex[idReactor], ('Decommissioning', 'Duration')] = duration
     				rtn.loc[agentIndex[idReactor], ('Decommissioning', 'OvernightCost')] = overnightCost
     	operation_maintenance = region.find('operation_maintenance')
@@ -305,10 +310,10 @@ def economic_info(series):
     		variable = int(operation_maintenance.find('variable').text)
     		rtn.loc[agentIndex[idRegion], ('OperationMaintenance', 'FixedCost')] = fixed
     		rtn.loc[agentIndex[idRegion], ('OperationMaintenance', 'VariableCost')] = variable
-    		for idInstitution in f_entry[f_entry.ParentId==idRegion]['AgentId'].tolist():
+    		for idInstitution in dfEntry[dfEntry.ParentId==idRegion]['AgentId'].tolist():
     			rtn.loc[agentIndex[idInstitution], ('OperationMaintenance', 'FixedCost')] = fixed
     			rtn.loc[agentIndex[idInstitution], ('OperationMaintenance', 'VariableCost')] = variable
-    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    			for idReactor in dfEntry[dfEntry.ParentId==idInstitution]['AgentId'].tolist():
     				rtn.loc[agentIndex[idReactor], ('OperationMaintenance', 'FixedCost')] = fixed
     				rtn.loc[agentIndex[idReactor], ('OperationMaintenance', 'VariableCost')] = variable
     	fuel = region.find('fuel')
@@ -322,12 +327,12 @@ def economic_info(series):
     		dfWaste.loc[agentIndex[idRegion], 'WasteFee'] = waste
     		rtn.loc[agentIndex[idRegion], ('Fuel', 'SupplyCost')] = dfSupply.loc[agentIndex[idRegion], 'SupplyCost']
     		rtn.loc[agentIndex[idRegion], ('Fuel', 'WasteFee')] = dfWaste.loc[agentIndex[idRegion], 'WasteFee']
-    		for idInstitution in f_entry[f_entry.ParentId==idRegion]['AgentId'].tolist():
+    		for idInstitution in dfEntry[dfEntry.ParentId==idRegion]['AgentId'].tolist():
     			dfSupply.loc[agentIndex[idInstitution], 'SupplyCost'] = supply
     			dfWaste.loc[agentIndex[idInstitution], 'WasteFee'] = waste
     			rtn.loc[agentIndex[idInstitution], ('Fuel', 'SupplyCost')] = dfSupply.loc[agentIndex[idInstitution], 'SupplyCost']
     			rtn.loc[agentIndex[idInstitution], ('Fuel', 'WasteFee')] = dfWaste.loc[agentIndex[idInstitution], 'WasteFee']	
-    		for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    		for idReactor in dfEntry[dfEntry.ParentId==idInstitution]['AgentId'].tolist():
     			dfSupply.loc[agentIndex[idReactor], 'SupplyCost'] = supply
     			dfWaste.loc[agentIndex[idReactor], 'WasteFee'] = waste
     			rtn.loc[agentIndex[idReactor], ('Fuel', 'SupplyCost')] = dfSupply.loc[agentIndex[idReactor], 'SupplyCost']
@@ -344,7 +349,7 @@ def economic_info(series):
     			rtn.loc[agentIndex[idInstitution], ('Finance','ReturnOnDebt')] = returnOnDebt
     			rtn.loc[agentIndex[idInstitution],('Finance','ReturnOnEquity')] = returnOnEquity
     			rtn.loc[gent_index[idInstitution], ('Finance','DiscountRate')] = discountRate
-    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    			for idReactor in dfEntry[dfEntry.ParentId==idInstitution]['AgentId'].tolist():
     				rtn.loc[agentIndex[idReactor], ('Finance', 'TaxRate')] = taxRate
     				rtn.loc[agentIndex[idReactor], ('Finance','ReturnOnDebt')] = returnOnDebt
     				rtn.loc[agentIndex[idReactor], ('Finance','ReturnOnEquity')] = returnOnEquity
@@ -359,7 +364,7 @@ def economic_info(series):
     			rtn.loc[agentIndex[idInstitution], ('Capital', 'Duration')] = duration
     			rtn.loc[agentIndex[idInstitution], ('Capital', 'Deviation')] = deviation
     			rtn.loc[agentIndex[idInstitution], ('Capital', 'OvernightCost')] = overnightCost
-    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    			for idReactor in dfEntry[dfEntry.ParentId==idInstitution]['AgentId'].tolist():
     				rtn.loc[agentIndex[idReactor], ('Capital', 'Begin')] = begin
     				rtn.loc[agentIndex[idReactor], ('Capital', 'Duration')] = duration
     				rtn.loc[agentIndex[idReactor], ('Capital', 'Deviation')] = deviation
@@ -370,7 +375,7 @@ def economic_info(series):
     			overnightCost = int(decommissioning.find('overnight_cost').text)
     			rtn.loc[agentIndex[idInstitution], ('Decommissioning', 'Duration')] = duration
     			rtn.loc[agentIndex[idInstitution], ('Decommissioning', 'OvernightCost')] = overnightCost
-    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    			for idReactor in dfEntry[dfEntry.ParentId==idInstitution]['AgentId'].tolist():
     				rtn.loc[agentIndex[idReactor], ('Decommissioning', 'Duration')] = duration
     				rtn.loc[agentIndex[idReactor], ('Decommissioning', 'OvernightCost')] = overnightCost
     		operation_maintenance = institution.find('operation_maintenance')
@@ -379,7 +384,7 @@ def economic_info(series):
     			variable = int(operation_maintenance.find('variable').text)
     			rtn.loc[agentIndex[idInstitution], ('OperationMaintenance', 'FixedCost')] = fixed
     			rtn.loc[agentIndex[idInstitution], ('OperationMaintenance', 'VariableCost')] = variable
-    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    			for idReactor in dfEntry[dfEntry.ParentId==idInstitution]['AgentId'].tolist():
     				rtn.loc[agentIndex[idReactor], ('OperationMaintenance', 'FixedCost')] = fixed
     				rtn.loc[agentIndex[idReactor], ('OperationMaintenance', 'VariableCost')] = variable
     		fuel = institution.find('fuel')
@@ -393,7 +398,7 @@ def economic_info(series):
     			dfWaste.loc[agentIndex[idInstitution], 'WasteFee'] = waste
     			rtn.loc[agentIndex[idInstitution], ('Fuel', 'SupplyCost')] = dfSupply.loc[agentIndex[idInstitution], 'SupplyCost']
     			rtn.loc[agentIndex[idInstitution], ('Fuel', 'WasteFee')] = dfWaste.loc[agentIndex[idInstitution], 'WasteFee']
-    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    			for idReactor in dfEntry[dfEntry.ParentId==idInstitution]['AgentId'].tolist():
     				dfSupply.loc[agentIndex[idReactor], 'SupplyCost'] = supply
     				dfWaste.loc[agentIndex[idReactor], 'WasteFee'] = waste
     				rtn.loc[agentIndex[idReactor], ('Fuel', 'SupplyCost')] = dfSupply.loc[agentIndex[idReactor], 'SupplyCost']
