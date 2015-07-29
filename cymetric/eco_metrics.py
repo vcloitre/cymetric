@@ -167,7 +167,7 @@ def decommissioning_cost(series):
     	duration = int(dfEcoInfo.loc[id, ('Decommissioning', 'Duration')])
     	overnightCost = dfEcoInfo.loc[id, ('Decommissioning', 'OvernightCost')]
     	cashFlowShape = capital_shape(duration // 2, duration-1)
-    	powerCapacity = dfPower[dfPower.AgentId==i]['Value'].iloc[0]
+    	powerCapacity = dfPower[dfPower.AgentId==id]['Value'].iloc[0]
     	cashFlow = cashFlowShape * powerCapacity * overnightCost
     	entryTime = dfEntry[dfEntry.AgentId==id]['EnterTime'].iloc[0]
     	lifetime = dfEntry[dfEntry.AgentId==id]['Lifetime'].iloc[0]
