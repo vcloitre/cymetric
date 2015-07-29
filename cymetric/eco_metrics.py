@@ -165,12 +165,12 @@ def decommissioning_cost(series):
     for id in reactorsId:
     	duration = dfEcoInfo.loc[id, ('Decommissioning', 'Duration')]
     	overnightCost = dfEcoInfo.loc[id, ('Decommissioning', 'OvernightCost')]
-        cashFlowShape = capital_shape(duration // 2, duration-1)
-        powerCapacity = dfPower[dfPower.AgentId==i]['Value'].iloc[0]
-        cashFlow = cashFlowShape * powerCapacity * overnightCost
-        entryTime = dfEntry[dfEntry.AgentId==id]['EnterTime'].iloc[0]
-        lifetime = dfEntry[dfEntry.AgentId==id]['Lifetime'].iloc[0]
-        rtn = pd.concat([rtn,pd.DataFrame({'AgentId': id, 'Time': list(range(lifetime + entryTime, lifetime + entryTime + duration)), 'Payment': cashFlow})], ignore_index=True)
+    	cashFlowShape = capital_shape(duration // 2, duration-1)
+    	powerCapacity = dfPower[dfPower.AgentId==i]['Value'].iloc[0]
+    	cashFlow = cashFlowShape * powerCapacity * overnightCost
+    	entryTime = dfEntry[dfEntry.AgentId==id]['EnterTime'].iloc[0]
+    	lifetime = dfEntry[dfEntry.AgentId==id]['Lifetime'].iloc[0]
+    	rtn = pd.concat([rtn,pd.DataFrame({'AgentId': id, 'Time': list(range(lifetime + entryTime, lifetime + entryTime + duration)), 'Payment': cashFlow})], ignore_index=True)
     rtn['SimId'] = dfPower['SimId'].iloc[0]
     subset = rtn.columns.tolist()
     subset = subset[-1:]+subset[:-1]
