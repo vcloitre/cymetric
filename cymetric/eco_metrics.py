@@ -199,7 +199,7 @@ def operation_maintenance(series):
     dfEcoInfo = dfEcoInfo.set_index(('Agent', 'AgentId'))
     rtn['Payment'] = pd.Series()
     for id in dfEcoInfo.index:
-    	if isreactor(id):
+    	if isreactor(id, rtn):
     		powerGenerated = rtn[rtn.AgentId==id].loc[:,'Value']
     		powerCapacity = max(powerGenerated)
     		fixedOM = dfEcoInfo.loc[id, ('OperationMaintenance', 'FixedCost')]
