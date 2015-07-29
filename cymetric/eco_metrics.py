@@ -109,7 +109,7 @@ def fuel_cost(series):
     dfResources = series[0].reset_index().set_index(['ResourceId'])
     dfTransactions = series[1].reset_index().set_index(['ResourceId'])
     dfEcoInfo = series[2].reset_index()
-    tuples = (('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Fuel', 'Cost'), ('Fuel', 'WasteFee'), ('Finance','DiscountRate'))
+    tuples = (('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Fuel', 'SupplyCost'), ('Fuel', 'WasteFee'), ('Finance','DiscountRate'))
     index = pd.MultiIndex.from_tuples(tuples, names=['first', 'second'])
     dfEcoInfo.columns = index
     dfEcoInfo = dfEcoInfo.set_index(('Agent', 'AgentId'))
