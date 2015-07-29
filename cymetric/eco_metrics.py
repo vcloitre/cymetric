@@ -236,6 +236,7 @@ def economic_info(series):
     		supply[type.find('name').text] = int(type.find('supply_cost').text)
     		waste[type.find('name').text] = int(type.find('waste_fee').text)
     	for j in rtn.index:
+    		print(rtn)#test
     		print(rtn.loc[j, ('Fuel', 'SupplyCost')])#test
     		print(supply)#test
     		rtn.loc[j, ('Fuel', 'SupplyCost')] = supply
