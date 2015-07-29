@@ -181,7 +181,7 @@ def decommissioning_cost(series):
 del _dcdeps, _dcschema
 
 
-_omdeps = [('TimeSeriesPower', ('SimId', 'AgentId', 'Time'), 'Value')]
+_omdeps = [('TimeSeriesPower', ('SimId', 'AgentId', 'Time'), 'Value'), ('EconomicInfo', (('Agent', 'AgentId'), ('OperationMaintenance', 'FixedCost')), ('OperationMaintenance', 'VariableCost'))]
 
 _omschema = [('SimId', ts.UUID), ('AgentId', ts.INT), ('Time', ts.INT), 
           ('Payment', ts.DOUBLE)]
@@ -190,11 +190,20 @@ _omschema = [('SimId', ts.UUID), ('AgentId', ts.INT), ('Time', ts.INT),
 def operation_maintenance(series):
     """O&M
     """
-    cost = 15 # $/MWh
+    #cost = 15 # $/MWh
     rtn = series[0].reset_index()
-    #rtn.Time=rtn.Time//12
-    #rtn =  rtn.drop_duplicates(subset=['AgentId', 'Time'], take_last=True) useful when the Time is in years but useless when months
-    rtn['Payment'] = rtn['Value'] * 8760 / 12 * cost
+    dfEcoInfo = series[1].reset_index()
+    tuples = (('Agent', 'AgentId'), ('OperationMaintenance', 'FixedCost'), ('OperationMaintenance', 'VariableCost'))
+    index = pd.MultiIndex.from_tuples(tuples, names=['first', 'second'])
+    dfEcoInfo.columns = index
+    dfEcoInfo = dfEcoInfo.set_index(('Agent', 'AgentId'))
+    rtn['Payment'] = pd.Series()
+    for id in dfEcoInfo.index:
+    	powerGenerated = rtn[rtn.AgentId==id].loc[:,'Value']
+    	powerCapacity = max(powerGenerated)
+    	fixedOM = dfEcoInfo.loc[id, ('OperationMaintenance', 'FixedCost')]
+    	variableOM = dfEcoInfo.loc[id, ('OperationMaintenance', 'VariableCost')]
+        rtn[rtn.AgentId==id].loc[:, 'Payment'] = powerGenerated * variableOM + powerCapacity * fixedOM
     rtn = rtn.reset_index()
     del rtn['Value'], rtn['index']
     return rtn
