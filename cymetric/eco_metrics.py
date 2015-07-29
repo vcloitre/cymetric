@@ -197,7 +197,7 @@ def operation_maintenance(series):
     index = pd.MultiIndex.from_tuples(tuples, names=['first', 'second'])
     dfEcoInfo.columns = index
     dfEcoInfo = dfEcoInfo.set_index(('Agent', 'AgentId'))
-    rtn['Payment'] = pd.Series()
+    rtn['Payment'] = 0
     rtn['tmp'] = 0
     for id in dfEcoInfo.index:
     	if isreactor(id, rtn):
