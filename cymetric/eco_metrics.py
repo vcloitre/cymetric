@@ -205,16 +205,10 @@ def operation_maintenance(series):
     		powerCapacity = max(powerGenerated)
     		fixedOM = dfEcoInfo.loc[id, ('OperationMaintenance', 'FixedCost')]
     		variableOM = dfEcoInfo.loc[id, ('OperationMaintenance', 'VariableCost')]
-    		print(powerGenerated) # test
-    		print(variableOM) # test
-    		print(powerCapacity) # test
-    		print(fixedOM) # test
-    		print(powerGenerated * variableOM + powerCapacity * fixedOM) # test
-    		print(rtn[rtn.AgentId==id].loc[:, 'Payment']) # test
     		rtn['tmp'] = powerGenerated * variableOM + powerCapacity * fixedOM
     		rtn.loc[:, 'Payment'] += rtn.loc[:, 'tmp'].fillna(0)
     rtn = rtn.reset_index()
-    del rtn['Value'], rtn['index']
+    del rtn['Value'], rtn['index'], rtn['tmp']
     return rtn
 
 del _omdeps, _omschema
