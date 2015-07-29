@@ -114,8 +114,8 @@ def fuel_cost(series):
     dfTransactions['Payment'] = pd.Series()
     dfTransactions['Payment'] = dfTransactions['Payment'].fillna(0)
     for agentId in dfEcoInfo.index:
-        tmpInfo = dfEcoInfo.loc[agentId]
-        tmpTrans = dfTransactions[dfTransactions.ReceiverId==agentId]
+    	tmpInfo = dfEcoInfo.loc[agentId]
+    	tmpTrans = dfTransactions[dfTransactions.ReceiverId==agentId]
     	for commod in tmpInfo[('Fuel', 'SupplyCost')]:
     		price = tmpInfo[('Fuel', 'SupplyCost')][commod]
     		tmpTrans[tmpTrans.Commodity==commod].loc[:, 'Payment'] = tmpTrans[tmpTrans.Commodity==commod].loc[:, 'Quantity'] * price
