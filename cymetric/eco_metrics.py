@@ -233,20 +233,15 @@ def economic_info(series):
     dfSupply['SupplyCost'] = pd.Series()
     dfWaste = pd.DataFrame(index=rtn.index)
     dfWaste['WasteFee'] = pd.Series()
+    supply = {}
+    waste = {}
     if not fuel == None:
-    	supply = {}
-    	waste = {}
     	for type in fuel.findall('type'):
     		supply[type.find('name').text] = int(type.find('supply_cost').text)
     		waste[type.find('name').text] = int(type.find('waste_fee').text)
     	for j in rtn.index:
-    		print(rtn)#test
-    		print(rtn.loc[j, ('Fuel', 'SupplyCost')])#test
-    		print(supply)#test
     		dfSupply.loc[j, 'SupplyCost'] = supply
     		dfWaste.loc[j, 'WasteFee'] = waste
-    	print(rtn.loc[:, ('Fuel', 'SupplyCost')])#test
-    	print(dfSupply.loc[:, ('Fuel', 'SupplyCost')])#test
     	rtn.loc[:, ('Fuel', 'SupplyCost')] = dfSupply.loc[:, 'SupplyCost']
     	rtn.loc[:, ('Fuel', 'WasteFee')] = dfWaste.loc[:, 'WasteFee']
     # discount rate is only possible at sim or reg level
@@ -320,17 +315,23 @@ def economic_info(series):
     	if fuel is not None:
     		supply = {}
     		waste = {}
-    		for type in supply.findall('type'):
+    		for type in fuel.findall('type'):
     			supply[type.find('name').text] = int(type.find('supply_cost').text)
     			waste[type.find('name').text] = int(type.find('waste_fee').text)
-    		rtn.loc[agentIndex[idRegion], ('Fuel', 'SupplyCost')] = supply
-    		rtn.loc[agentIndex[idRegion], ('Fuel', 'WasteFee')] = waste
+    		dfSupply.loc[agentIndex[idRegion], 'SupplyCost'] = supply
+    		dfWaste.loc[agentIndex[idRegion], 'WasteFee'] = waste
+    		rtn.loc[agentIndex[idRegion], ('Fuel', 'SupplyCost')] = dfSupply.loc[agentIndex[idRegion], 'SupplyCost']
+    		rtn.loc[agentIndex[idRegion], ('Fuel', 'WasteFee')] = dfWaste.loc[agentIndex[idRegion], 'WasteFee']
     		for idInstitution in f_entry[f_entry.ParentId==idRegion]['AgentId'].tolist():
-    			rtn.loc[agentIndex[idInstitution], ('Fuel', 'SupplyCost')] = supply
-    			rtn.loc[agentIndex[idInstitution], ('Fuel', 'WasteFee')] = waste
-    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
-    				rtn.loc[agentIndex[idReactor], ('Fuel', 'SupplyCost')] = supply
-    				rtn.loc[agentIndex[idReactor], ('Fuel', 'WasteFee')] = waste
+    			dfSupply.loc[agentIndex[idInstitution], 'SupplyCost'] = supply
+    			dfWaste.loc[agentIndex[idInstitution], 'WasteFee'] = waste
+    			rtn.loc[agentIndex[idInstitution], ('Fuel', 'SupplyCost')] = dfSupply.loc[agentIndex[idInstitution], 'SupplyCost']
+    			rtn.loc[agentIndex[idInstitution], ('Fuel', 'WasteFee')] = dfWaste.loc[agentIndex[idInstitution], 'WasteFee']	
+    		for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    			dfSupply.loc[agentIndex[idReactor], 'SupplyCost'] = supply
+    			dfWaste.loc[agentIndex[idReactor], 'WasteFee'] = waste
+    			rtn.loc[agentIndex[idReactor], ('Fuel', 'SupplyCost')] = dfSupply.loc[agentIndex[idReactor], 'SupplyCost']
+    			rtn.loc[agentIndex[idReactor], ('Fuel', 'WasteFee')] = dfWaste.loc[agentIndex[idReactor], 'WasteFee']
     	for institution in region.findall('institution'):
     		idInstitution = int(institution.find('id').text)
     		finance = institution.find('finance')
@@ -388,11 +389,15 @@ def economic_info(series):
     			for type in supply.findall('type'):
     				supply[type.find('name').text] = int(type.find('supply_cost').text)
     				waste[type.find('name').text] = int(type.find('waste_fee').text)
-    			rtn.loc[agentIndex[idInstitution], ('Fuel', 'SupplyCost')] = supply
-    			rtn.loc[agentIndex[idInstitution], ('Fuel', 'WasteFee')] = waste
-    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
-    				rtn.loc[agentIndex[idReactor], ('Fuel', 'SupplyCost')] = supply
-    				rtn.loc[agentIndex[idReactor], ('Fuel', 'WasteFee')] = waste
+    			dfSupply.loc[agentIndex[idInstitution], 'SupplyCost'] = supply
+    			dfWaste.loc[agentIndex[idInstitution], 'WasteFee'] = waste
+    			rtn.loc[agentIndex[idInstitution], ('Fuel', 'SupplyCost')] = dfSupply.loc[agentIndex[idInstitution], 'SupplyCost']
+    			rtn.loc[agentIndex[idInstitution], ('Fuel', 'WasteFee')] = dfWaste.loc[agentIndex[idInstitution], 'WasteFee']
+				for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    				dfSupply.loc[agentIndex[idReactor], 'SupplyCost'] = supply
+    				dfWaste.loc[agentIndex[idReactor], 'WasteFee'] = waste
+    				rtn.loc[agentIndex[idReactor], ('Fuel', 'SupplyCost')] = dfSupply.loc[agentIndex[idReactor], 'SupplyCost']
+    				rtn.loc[agentIndex[idReactor], ('Fuel', 'WasteFee')] = dfWaste.loc[agentIndex[idReactor], 'WasteFee']
     		for reactor in institution.findall('reactor'):
     			idReactor = int(reactor.find('id').text)
     			capital = reactor.find('capital')
@@ -412,8 +417,10 @@ def economic_info(series):
     				for type in supply.findall('type'):
     					supply[type.find('name').text] = int(type.find('supply_cost').text)
     					waste[type.find('name').text] = int(type.find('waste_fee').text)
-    				rtn.loc[agentIndex[idReactor], ('Fuel', 'SupplyCost')] = supply
-    				rtn.loc[agentIndex[idReactor], ('Fuel', 'WasteFee')] = waste
+    				dfSupply.loc[agentIndex[idReactor], 'SupplyCost'] = supply
+    				dfWaste.loc[agentIndex[idReactor], 'WasteFee'] = waste
+    				rtn.loc[agentIndex[idReactor], ('Fuel', 'SupplyCost')] = dfSupply.loc[agentIndex[idReactor], 'SupplyCost']
+    				rtn.loc[agentIndex[idReactor], ('Fuel', 'WasteFee')] = dfWaste.loc[agentIndex[idReactor], 'WasteFee']
     			decommissioning = reactor.find('decommissioning')
     			if decommissioning is not None:
     				rtn.loc[agentIndex[idReactor], ('Decommissioning', 'Duration')] = int(decommissioning.find('duration').text)
