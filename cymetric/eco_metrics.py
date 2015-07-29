@@ -42,7 +42,7 @@ _ccschema = [('SimId', ts.UUID), ('AgentId', ts.INT),
 @metric(name='CapitalCost', depends=_ccdeps, schema=_ccschema)
 def capital_cost(series):
     """cap_cost returns the cash flows per YEAR (MAYBE BETTER PER MONTH FOR THE 
-    RANDOM ANALYSIS) related to the capital costs of a reactor. The overnight_cost 
+    RANDOM ANALYSIS) related to the capital costs of a reactor. The overnightCost 
     cost comes from WEO 2014 (cost in the US). The timeframe for the payment of 
     the capital costs is drawn from of a graph from EDF. Next steps could be 
     make the price depends on the reactor technology and make the payment more 
@@ -93,7 +93,7 @@ del _ccdeps, _ccschema
 
 _fcdeps = [('Resources', ('SimId', 'ResourceId'), 'Quantity'), ('Transactions',
         ('SimId', 'TransactionId', 'ReceiverId', 'ResourceId', 'Commodity'), 
-        'Time')]
+        'Time'), ('EconomicInfo', (('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Fuel', 'Cost'), ('Fuel', 'WasteFee')), ('Finance','DiscountRate'))]
 
 _fcschema = [('SimId', ts.UUID), ('TransactionId', ts.INT), ('AgentId', 
           ts.INT), ('Commodity', ts.STRING), ('Payment', ts.DOUBLE), ('Time', 
@@ -104,11 +104,14 @@ def fuel_cost(series):
     """fuel_cost returns the cash flows related to the fuel costs for power 
     plants.
     """
-    fuel_price = 2360 # $/kg
+    # fuel_price = 2360 # $/kg
     # see http://www.world-nuclear.org/info/Economic-Aspects/Economics-of-Nuclear-Power/
     # need to add a dictionnary with diff commodities and prices (uox, wast etc..)
     f_resources = series[0].reset_index().set_index(['ResourceId'])
     f_transactions = series[1].reset_index().set_index(['ResourceId'])
+    f_ecoi = series[2].reset_index().set_index('AgentId')
+    for agentId in f_ecoi.index:
+    	tmp = f_ecoi.loc[agentId]
     f_transactions['Quantity'] = f_resources['Quantity']
     f_transactions['Payment'] = f_transactions['Quantity'] * fuel_price
     # * (f_transactions['Commodity']=='uox' or f_transactions['Commodity']=='mox')
@@ -190,211 +193,219 @@ _eischema = [('AgentId', ts.INT), ('Prototype', ts.STRING), ('ParentId', ts.INT)
 def economic_info(series):
     """Write the economic parameters in the database
     """
-    tuples = [('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Agent', 'ParentId'), ('Finance','ReturnOnDebt'), ('Finance','ReturnOnEquity'), ('Finance','TaxRate'), ('Finance','DiscountRate'), ('Capital', 'Begin'), ('Capital', 'Duration'), ('Capital', 'Deviation'), ('Capital', 'OvernightCost'), ('Decommissioning', 'Duration'), ('Decommissioning', 'OvernightCost'), ('OperationMaintenance', 'FixedCost'), ('OperationMaintenance', 'VariableCost'), ('Fuel', 'Cost'), ('Fuel', 'WasteFee'), ('Truncation', 'Begin'), ('Truncation', 'End')]
+    tuples = [('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Agent', 'ParentId'), ('Finance','ReturnOnDebt'), ('Finance','ReturnOnEquity'), ('Finance','TaxRate'), ('Finance','DiscountRate'), ('Capital', 'Begin'), ('Capital', 'Duration'), ('Capital', 'Deviation'), ('Capital', 'OvernightCost'), ('Decommissioning', 'Duration'), ('Decommissioning', 'OvernightCost'), ('OperationMaintenance', 'FixedCost'), ('OperationMaintenance', 'VariableCost'), ('Fuel', 'SupplyCost'), ('Fuel', 'WasteFee'), ('Truncation', 'Begin'), ('Truncation', 'End')]
     index = pd.MultiIndex.from_tuples(tuples, names=['first', 'second'])
     rtn = pd.DataFrame(index=index)
-    ser = pd.Series(False, index=['finance', 'capital', 'decommissioning', 'operationmMaintenance', 'fuel'])
     f_entry = series[0].reset_index()
-    agent_index = f_entry.reset_index().set_index('AgentId')['index']
+    agentIndex = f_entry.reset_index().set_index('AgentId')['index']
     rtn = rtn.T
     rtn[('Agent', 'Prototype')] = f_entry['Prototype']
     rtn[('Agent', 'AgentId')] = f_entry['AgentId']
     rtn[('Agent', 'ParentId')] = f_entry['ParentId']
-    xml_inputs = 'parameters.xml'
-    tree = ET.parse(xml_inputs)
+    parametersInput = 'parameters.xml'
+    tree = ET.parse(parametersInput)
     root = tree.getroot()
     truncation = root.find('truncation')
     rtn[('Truncation', 'Begin')] = int(truncation.find('simulation_begin').text)
     rtn[('Truncation', 'End')] = int(truncation.find('simulation_end').text)
     finance = root.find('finance')
     if not finance == None:
-    	ser['finance'] = True
     	rtn.loc[:, ('Finance', 'TaxRate')] = float(finance.find('tax_rate').text)
     	rtn.loc[:, ('Finance','ReturnOnDebt')] = float(finance.find('return_on_debt').text)
     	rtn.loc[:, ('Finance','ReturnOnEquity')] = float(finance.find('return_on_equity').text)
     	rtn.loc[:, ('Finance','DiscountRate')] = float(finance.find('discount_rate').text)
     capital = root.find('capital')
     if not capital == None:
-    	ser['capital'] = True
     	rtn.loc[:, ('Capital', 'Begin')] = int(capital.find('begin').text)
     	rtn.loc[:, ('Capital', 'Duration')] = int(capital.find('duration').text)
     	rtn.loc[:, ('Capital', 'Deviation')] = float(capital.find('deviation').text)
     	rtn.loc[:, ('Capital', 'OvernightCost')] = int(capital.find('overnight_cost').text)
     decommissioning = root.find('decommissioning')
     if not decommissioning == None:
-    	ser['decommissioning'] = True
     	rtn.loc[:, ('Decommissioning', 'Duration')] = int(decommissioning.find('duration').text)
     	rtn.loc[:, ('Decommissioning', 'OvernightCost')] = int(decommissioning.find('overnight_cost').text)
     operation_maintenance = root.find('operation_maintenance')
     if not operation_maintenance == None:
-    	ser['operationMaintenance'] = True
     	rtn.loc[:, ('OperationMaintenance', 'FixedCost')] = int(operation_maintenance.find('fixed').text)
     	rtn.loc[:, ('OperationMaintenance', 'VariableCost')] = int(operation_maintenance.find('variable').text)
     fuel = root.find('fuel')
     if not fuel == None:
-    	ser['fuel'] = True
-    	rtn.loc[:, ('Fuel', 'Cost')] = int(fuel.find('cost').text)
-    	rtn.loc[:, ('Fuel', 'WasteFee')] = int(fuel.find('waste_fee').text)
+    	supply = {}
+    	waste = {}
+    	for type in supply.findall('type'):
+    		supply[type.find('name').text] = int(type.find('supply_cost').text)
+    		waste[type.find('name').text] = int(type.find('waste_fee').text)
+    	rtn.loc[:, ('Fuel', 'SupplyCost')] = supply
+    	rtn.loc[:, ('Fuel', 'WasteFee')] = waste
     # discount rate is only possible at sim or reg level
     for region in root.findall('region'):
-    	id_region = int(region.find('id').text)
-    	if 'finance' in ser[ser==False]:
-    		finance = region.find('finance')
-    		if not finance == None:
-    			return_on_debt = float(finance.find('return_on_debt').text)
-    			return_on_equity = float(finance.find('return_on_equity').text)
-    			tax_rate = float(finance.find('tax_rate').text)
-    			discountRate = float(finance.find('discount_rate').text)
-    			rtn.loc[agent_index[id_region], ('Finance', 'TaxRate')] = tax_rate
-    			rtn.loc[agent_index[id_region], ('Finance','ReturnOnDebt')] = return_on_debt
-    			rtn.loc[agent_index[id_region],('Finance','ReturnOnEquity')] = return_on_equity
-    			rtn.loc[gent_index[id_region], ('Finance','DiscountRate')] = discountRate
-    			for id_institution in f_entry[f_entry.ParentId==id_region]['AgentId'].tolist():
-    				rtn.loc[agent_index[id_institution], ('Finance', 'TaxRate')] = tax_rate
-    				rtn.loc[agent_index[id_institution], ('Finance','ReturnOnDebt')] = return_on_debt
-    				rtn.loc[agent_index[id_institution], ('Finance','ReturnOnEquity')] = return_on_equity
-    				rtn.loc[gent_index[id_institution], ('Finance','DiscountRate')] = discountRate
-    				for id_reactor in f_entry[f_entry.ParentId==id_institution]['AgentId'].tolist():
-    					rtn.loc[agent_index[id_reactor], ('Finance', 'TaxRate')] = tax_rate
-    					rtn.loc[agent_index[id_reactor], ('Finance','ReturnOnDebt')] = return_on_debt
-    					rtn.loc[agent_index[id_reactor], ('Finance','ReturnOnEquity')] = return_on_equity
-    					rtn.loc[gent_index[id_reactor], ('Finance','DiscountRate')] = discountRate
-    	if 'capital' in ser[ser==False]:
-    		capital = region.find('capital')
-    		if capital is not None:
-    			begin = int(capital.find('begin').text)
-    			duration = int(capital.find('duration').text)
-    			deviation = float(capital.find('deviation').text)
-    			overnight_cost = int(capital.find('overnight_cost').text)
-    			rtn.loc[agent_index[id_region], ('Capital', 'Begin')] = begin
-    			rtn.loc[agent_index[id_region], ('Capital', 'Duration')] = duration
-    			rtn.loc[agent_index[id_region], ('Capital', 'Deviation')] = deviation
-    			rtn.loc[agent_index[id_region], ('Capital', 'OvernightCost')] = overnight_cost
-    			for id_institution in f_entry[f_entry.ParentId==id_region]['AgentId'].tolist():
-    				rtn.loc[agent_index[id_institution], ('Capital', 'Begin')] = begin
-    				rtn.loc[agent_index[id_institution], ('Capital', 'Duration')] = duration
-    				rtn.loc[agent_index[id_institution], ('Capital', 'Deviation')] = deviation
-    				rtn.loc[agent_index[id_institution], ('Capital', 'OvernightCost')] = overnight_cost
-    				for id_reactor in f_entry[f_entry.ParentId==id_institution]['AgentId'].tolist():
-    					rtn.loc[agent_index[id_reactor], ('Capital', 'Begin')] = begin
-    					rtn.loc[agent_index[id_reactor], ('Capital', 'Duration')] = duration
-    					rtn.loc[agent_index[id_reactor], ('Capital', 'Deviation')] = deviation
-    					rtn.loc[agent_index[id_reactor], ('Capital', 'OvernightCost')] = overnight_cost
-    	if 'decommissioning' in ser[ser==False]:
-    		decommissioning = region.find('decommissioning')
-    		if decommissioning is not None:
-    			duration = int(decommissioning.find('duration').text)
-    			overnight_cost = int(decommissioning.find('overnight_cost').text)
-    			rtn.loc[agent_index[id_region], ('Decommissioning', 'Duration')] = duration
-    			rtn.loc[agent_index[id_region], ('Decommissioning', 'OvernightCost')] = overnight_cost
-    			for id_institution in f_entry[f_entry.ParentId==id_region]['AgentId'].tolist():
-    				rtn.loc[agent_index[id_institution], ('Decommissioning', 'Duration')] = duration
-    				rtn.loc[agent_index[id_institution], ('Decommissioning', 'OvernightCost')] = overnight_cost
-    				for id_reactor in f_entry[f_entry.ParentId==id_institution]['AgentId'].tolist():
-    					rtn.loc[agent_index[id_reactor], ('Decommissioning', 'Duration')] = duration
-    					rtn.loc[agent_index[id_reactor], ('Decommissioning', 'OvernightCost')] = overnight_cost
-    	if 'operationMaintenance' in ser[ser==False]:
-    		operation_maintenance = region.find('operation_maintenance')
-    		if operation_maintenance is not None:
-    			fixed = int(operation_maintenance.find('fixed').text)
-    			variable = int(operation_maintenance.find('variable').text)
-    			rtn.loc[agent_index[id_region], ('OperationMaintenance', 'FixedCost')] = fixed
-    			rtn.loc[agent_index[id_region], ('OperationMaintenance', 'VariableCost')] = variable
-    			for id_institution in f_entry[f_entry.ParentId==id_region]['AgentId'].tolist():
-    				rtn.loc[agent_index[id_institution], ('OperationMaintenance', 'FixedCost')] = fixed
-    				rtn.loc[agent_index[id_institution], ('OperationMaintenance', 'VariableCost')] = variable
-    				for id_reactor in f_entry[f_entry.ParentId==id_institution]['AgentId'].tolist():
-    					rtn.loc[agent_index[id_reactor], ('OperationMaintenance', 'FixedCost')] = fixed
-    					rtn.loc[agent_index[id_reactor], ('OperationMaintenance', 'VariableCost')] = variable
-    	if 'fuel' in ser[ser==False]:
-    		fuel = region.find('fuel')
-    		if fuel is not None:
-    			cost = int(fuel.find('cost').text)
-    			waste_fee = int(fuel.find('waste_fee').text)
-    			rtn.loc[agent_index[id_region], ('Fuel', 'Cost')] = cost
-    			rtn.loc[agent_index[id_region], ('Fuel', 'WasteFee')] = waste_fee
-    			for id_institution in f_entry[f_entry.ParentId==id_region]['AgentId'].tolist():
-    				rtn.loc[agent_index[id_institution], ('Fuel', 'Cost')] = cost
-    				rtn.loc[agent_index[id_institution], ('Fuel', 'WasteFee')] = waste_fee
-    				for id_reactor in f_entry[f_entry.ParentId==id_institution]['AgentId'].tolist():
-    					rtn.loc[agent_index[id_reactor], ('Fuel', 'Cost')] = cost
-    					rtn.loc[agent_index[id_reactor], ('Fuel', 'WasteFee')] = waste_fee
+    	idRegion = int(region.find('id').text)
+    	finance = region.find('finance')
+    	if not finance == None:
+    		returnOnDebt = float(finance.find('return_on_debt').text)
+    		returnOnEquity = float(finance.find('return_on_equity').text)
+    		taxRate = float(finance.find('tax_rate').text)
+    		discountRate = float(finance.find('discount_rate').text)
+    		rtn.loc[agentIndex[idRegion], ('Finance', 'TaxRate')] = taxRate
+    		rtn.loc[agentIndex[idRegion], ('Finance','ReturnOnDebt')] = returnOnDebt
+    		rtn.loc[agentIndex[idRegion],('Finance','ReturnOnEquity')] = returnOnEquity
+    		rtn.loc[gent_index[idRegion], ('Finance','DiscountRate')] = discountRate
+    		for idInstitution in f_entry[f_entry.ParentId==idRegion]['AgentId'].tolist():
+    			rtn.loc[agentIndex[idInstitution], ('Finance', 'TaxRate')] = taxRate
+    			rtn.loc[agentIndex[idInstitution], ('Finance','ReturnOnDebt')] = returnOnDebt
+    			rtn.loc[agentIndex[idInstitution], ('Finance','ReturnOnEquity')] = returnOnEquity
+    			rtn.loc[gent_index[idInstitution], ('Finance','DiscountRate')] = discountRate
+    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    				rtn.loc[agentIndex[idReactor], ('Finance', 'TaxRate')] = taxRate
+    				rtn.loc[agentIndex[idReactor], ('Finance','ReturnOnDebt')] = returnOnDebt
+    				rtn.loc[agentIndex[idReactor], ('Finance','ReturnOnEquity')] = returnOnEquity
+    				rtn.loc[gent_index[idReactor], ('Finance','DiscountRate')] = discountRate
+    	capital = region.find('capital')
+    	if capital is not None:
+    		begin = int(capital.find('begin').text)
+    		duration = int(capital.find('duration').text)
+    		deviation = float(capital.find('deviation').text)
+    		overnightCost = int(capital.find('overnight_cost').text)
+    		rtn.loc[agentIndex[idRegion], ('Capital', 'Begin')] = begin
+    		rtn.loc[agentIndex[idRegion], ('Capital', 'Duration')] = duration
+    		rtn.loc[agentIndex[idRegion], ('Capital', 'Deviation')] = deviation
+    		rtn.loc[agentIndex[idRegion], ('Capital', 'OvernightCost')] = overnightCost
+    		for idInstitution in f_entry[f_entry.ParentId==idRegion]['AgentId'].tolist():
+    			rtn.loc[agentIndex[idInstitution], ('Capital', 'Begin')] = begin
+    			rtn.loc[agentIndex[idInstitution], ('Capital', 'Duration')] = duration
+    			rtn.loc[agentIndex[idInstitution], ('Capital', 'Deviation')] = deviation
+    			rtn.loc[agentIndex[idInstitution], ('Capital', 'OvernightCost')] = overnightCost
+    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    				rtn.loc[agentIndex[idReactor], ('Capital', 'Begin')] = begin
+    				rtn.loc[agentIndex[idReactor], ('Capital', 'Duration')] = duration
+    				rtn.loc[agentIndex[idReactor], ('Capital', 'Deviation')] = deviation
+    				rtn.loc[agentIndex[idReactor], ('Capital', 'OvernightCost')] = overnightCost
+    	decommissioning = region.find('decommissioning')
+    	if decommissioning is not None:
+    		duration = int(decommissioning.find('duration').text)
+    		overnightCost = int(decommissioning.find('overnight_cost').text)
+    		rtn.loc[agentIndex[idRegion], ('Decommissioning', 'Duration')] = duration
+    		rtn.loc[agentIndex[idRegion], ('Decommissioning', 'OvernightCost')] = overnightCost
+    		for idInstitution in f_entry[f_entry.ParentId==idRegion]['AgentId'].tolist():
+    			rtn.loc[agentIndex[idInstitution], ('Decommissioning', 'Duration')] = duration
+    			rtn.loc[agentIndex[idInstitution], ('Decommissioning', 'OvernightCost')] = overnightCost
+    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    				rtn.loc[agentIndex[idReactor], ('Decommissioning', 'Duration')] = duration
+    				rtn.loc[agentIndex[idReactor], ('Decommissioning', 'OvernightCost')] = overnightCost
+    	operation_maintenance = region.find('operation_maintenance')
+    	if operation_maintenance is not None:
+    		fixed = int(operation_maintenance.find('fixed').text)
+    		variable = int(operation_maintenance.find('variable').text)
+    		rtn.loc[agentIndex[idRegion], ('OperationMaintenance', 'FixedCost')] = fixed
+    		rtn.loc[agentIndex[idRegion], ('OperationMaintenance', 'VariableCost')] = variable
+    		for idInstitution in f_entry[f_entry.ParentId==idRegion]['AgentId'].tolist():
+    			rtn.loc[agentIndex[idInstitution], ('OperationMaintenance', 'FixedCost')] = fixed
+    			rtn.loc[agentIndex[idInstitution], ('OperationMaintenance', 'VariableCost')] = variable
+    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    				rtn.loc[agentIndex[idReactor], ('OperationMaintenance', 'FixedCost')] = fixed
+    				rtn.loc[agentIndex[idReactor], ('OperationMaintenance', 'VariableCost')] = variable
+    	fuel = region.find('fuel')
+    	if fuel is not None:
+    		supply = {}
+    		waste = {}
+    		for type in supply.findall('type'):
+    			supply[type.find('name').text] = int(type.find('supply_cost').text)
+    			waste[type.find('name').text] = int(type.find('waste_fee').text)
+    		rtn.loc[agentIndex[idRegion], ('Fuel', 'SupplyCost')] = supply
+    		rtn.loc[agentIndex[idRegion], ('Fuel', 'WasteFee')] = waste
+    		for idInstitution in f_entry[f_entry.ParentId==idRegion]['AgentId'].tolist():
+    			rtn.loc[agentIndex[idInstitution], ('Fuel', 'SupplyCost')] = supply
+    			rtn.loc[agentIndex[idInstitution], ('Fuel', 'WasteFee')] = waste
+    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    				rtn.loc[agentIndex[idReactor], ('Fuel', 'SupplyCost')] = supply
+    				rtn.loc[agentIndex[idReactor], ('Fuel', 'WasteFee')] = waste
     	for institution in region.findall('institution'):
-    		id_institution = int(institution.find('id').text)
+    		idInstitution = int(institution.find('id').text)
     		finance = institution.find('finance')
     		if finance is not None:
-    			return_on_debt = float(finance.find('return_on_debt').text)
-    			return_on_equity = float(finance.find('return_on_equity').text)
-    			tax_rate = float(finance.find('tax_rate').text)
-    			rtn.loc[agent_index[id_institution], ('Finance', 'TaxRate')] = tax_rate
-    			rtn.loc[agent_index[id_institution], ('Finance','ReturnOnDebt')] = return_on_debt
-    			rtn.loc[agent_index[id_institution],('Finance','ReturnOnEquity')] = return_on_equity
-    			for id_reactor in f_entry[f_entry.ParentId==id_institution]['AgentId'].tolist():
-    				rtn.loc[agent_index[id_reactor], ('Finance', 'TaxRate')] = tax_rate
-    				rtn.loc[agent_index[id_reactor], ('Finance','ReturnOnDebt')] = return_on_debt
-    				rtn.loc[agent_index[id_reactor], ('Finance','ReturnOnEquity')] = return_on_equity
+    			returnOnDebt = float(finance.find('return_on_debt').text)
+    			returnOnEquity = float(finance.find('return_on_equity').text)
+    			taxRate = float(finance.find('tax_rate').text)
+    			discountRate = float(finance.find('discount_rate').text)
+    			rtn.loc[agentIndex[idInstitution], ('Finance', 'TaxRate')] = taxRate
+    			rtn.loc[agentIndex[idInstitution], ('Finance','ReturnOnDebt')] = returnOnDebt
+    			rtn.loc[agentIndex[idInstitution],('Finance','ReturnOnEquity')] = returnOnEquity
+    			rtn.loc[gent_index[idInstitution], ('Finance','DiscountRate')] = discountRate
+    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    				rtn.loc[agentIndex[idReactor], ('Finance', 'TaxRate')] = taxRate
+    				rtn.loc[agentIndex[idReactor], ('Finance','ReturnOnDebt')] = returnOnDebt
+    				rtn.loc[agentIndex[idReactor], ('Finance','ReturnOnEquity')] = returnOnEquity
+    				rtn.loc[gent_index[idReactor], ('Finance','DiscountRate')] = discountRate
     		capital = institution.find('capital')
     		if capital is not None:
     			begin = int(capital.find('begin').text)
     			duration = int(capital.find('duration').text)
     			deviation = float(capital.find('deviation').text)
-    			overnight_cost = int(capital.find('overnight_cost').text)
-    			rtn.loc[agent_index[id_institution], ('Capital', 'Begin')] = begin
-    			rtn.loc[agent_index[id_institution], ('Capital', 'Duration')] = duration
-    			rtn.loc[agent_index[id_institution], ('Capital', 'Deviation')] = deviation
-    			rtn.loc[agent_index[id_institution], ('Capital', 'OvernightCost')] = overnight_cost
-    			for id_reactor in f_entry[f_entry.ParentId==id_institution]['AgentId'].tolist():
-    				rtn.loc[agent_index[id_reactor], ('Capital', 'Begin')] = begin
-    				rtn.loc[agent_index[id_reactor], ('Capital', 'Duration')] = duration
-    				rtn.loc[agent_index[id_reactor], ('Capital', 'Deviation')] = deviation
-    				rtn.loc[agent_index[id_reactor], ('Capital', 'OvernightCost')] = overnight_cost
+    			overnightCost = int(capital.find('overnight_cost').text)
+    			rtn.loc[agentIndex[idInstitution], ('Capital', 'Begin')] = begin
+    			rtn.loc[agentIndex[idInstitution], ('Capital', 'Duration')] = duration
+    			rtn.loc[agentIndex[idInstitution], ('Capital', 'Deviation')] = deviation
+    			rtn.loc[agentIndex[idInstitution], ('Capital', 'OvernightCost')] = overnightCost
+    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    				rtn.loc[agentIndex[idReactor], ('Capital', 'Begin')] = begin
+    				rtn.loc[agentIndex[idReactor], ('Capital', 'Duration')] = duration
+    				rtn.loc[agentIndex[idReactor], ('Capital', 'Deviation')] = deviation
+    				rtn.loc[agentIndex[idReactor], ('Capital', 'OvernightCost')] = overnightCost
     		decommissioning = institution.find('decommissioning')
     		if decommissioning is not None:
     			duration = int(decommissioning.find('duration').text)
-    			overnight_cost = int(decommissioning.find('overnight_cost').text)
-    			rtn.loc[agent_index[id_institution], ('Decommissioning', 'Duration')] = duration
-    			rtn.loc[agent_index[id_institution], ('Decommissioning', 'OvernightCost')] = overnight_cost
-    			for id_reactor in f_entry[f_entry.ParentId==id_institution]['AgentId'].tolist():
-    				rtn.loc[agent_index[id_reactor], ('Decommissioning', 'Duration')] = duration
-    				rtn.loc[agent_index[id_reactor], ('Decommissioning', 'OvernightCost')] = overnight_cost
+    			overnightCost = int(decommissioning.find('overnight_cost').text)
+    			rtn.loc[agentIndex[idInstitution], ('Decommissioning', 'Duration')] = duration
+    			rtn.loc[agentIndex[idInstitution], ('Decommissioning', 'OvernightCost')] = overnightCost
+    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    				rtn.loc[agentIndex[idReactor], ('Decommissioning', 'Duration')] = duration
+    				rtn.loc[agentIndex[idReactor], ('Decommissioning', 'OvernightCost')] = overnightCost
     		operation_maintenance = institution.find('operation_maintenance')
     		if operation_maintenance is not None:
     			fixed = int(operation_maintenance.find('fixed').text)
     			variable = int(operation_maintenance.find('variable').text)
-    			rtn.loc[agent_index[id_institution], ('OperationMaintenance', 'FixedCost')] = fixed
-    			rtn.loc[agent_index[id_institution], ('OperationMaintenance', 'VariableCost')] = variable
-    			for id_reactor in f_entry[f_entry.ParentId==id_institution]['AgentId'].tolist():
-    				rtn.loc[agent_index[id_reactor], ('OperationMaintenance', 'FixedCost')] = fixed
-    				rtn.loc[agent_index[id_reactor], ('OperationMaintenance', 'VariableCost')] = variable
+    			rtn.loc[agentIndex[idInstitution], ('OperationMaintenance', 'FixedCost')] = fixed
+    			rtn.loc[agentIndex[idInstitution], ('OperationMaintenance', 'VariableCost')] = variable
+    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    				rtn.loc[agentIndex[idReactor], ('OperationMaintenance', 'FixedCost')] = fixed
+    				rtn.loc[agentIndex[idReactor], ('OperationMaintenance', 'VariableCost')] = variable
     		fuel = institution.find('fuel')
     		if fuel is not None:
-    			cost = int(fuel.find('cost').text)
-    			waste_fee = int(fuel.find('waste_fee').text)
-    			rtn.loc[agent_index[id_institution], ('Fuel', 'Cost')] = cost
-    			rtn.loc[agent_index[id_institution], ('Fuel', 'WasteFee')] = waste_fee
-    			for id_reactor in f_entry[f_entry.ParentId==id_institution]['AgentId'].tolist():
-    				rtn.loc[agent_index[id_reactor], ('Fuel', 'Cost')] = cost
-    				rtn.loc[agent_index[id_reactor], ('Fuel', 'WasteFee')] = waste_fee
+    			supply = {}
+    			waste = {}
+    			for type in supply.findall('type'):
+    				supply[type.find('name').text] = int(type.find('supply_cost').text)
+    				waste[type.find('name').text] = int(type.find('waste_fee').text)
+    			rtn.loc[agentIndex[idInstitution], ('Fuel', 'SupplyCost')] = supply
+    			rtn.loc[agentIndex[idInstitution], ('Fuel', 'WasteFee')] = waste
+    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    				rtn.loc[agentIndex[idReactor], ('Fuel', 'SupplyCost')] = supply
+    				rtn.loc[agentIndex[idReactor], ('Fuel', 'WasteFee')] = waste
     		for reactor in institution.findall('reactor'):
-    			id_reactor = int(reactor.find('id').text)
+    			idReactor = int(reactor.find('id').text)
     			capital = reactor.find('capital')
     			if capital is not None:
-    				rtn.loc[agent_index[id_reactor], ('Capital', 'Begin')] = int(capital.find('begin').text)
-    				rtn.loc[agent_index[id_reactor], ('Capital', 'Duration')] = int(capital.find('duration').text)
-    				rtn.loc[agent_index[id_reactor], ('Capital', 'Deviation')] = float(capital.find('deviation').text)
-    				rtn.loc[agent_index[id_reactor], ('Capital', 'OvernightCost')] = int(capital.find('overnight_cost').text)
+    				rtn.loc[agentIndex[idReactor], ('Capital', 'Begin')] = int(capital.find('begin').text)
+    				rtn.loc[agentIndex[idReactor], ('Capital', 'Duration')] = int(capital.find('duration').text)
+    				rtn.loc[agentIndex[idReactor], ('Capital', 'Deviation')] = float(capital.find('deviation').text)
+    				rtn.loc[agentIndex[idReactor], ('Capital', 'OvernightCost')] = int(capital.find('overnight_cost').text)
     			operation_maintenance = reactor.find('operation_maintenance')
     			if operation_maintenance is not None:
-    				rtn.loc[agent_index[id_reactor], ('OperationMaintenance', 'FixedCost')] = int(operation_maintenance.find('fixed').text)
-    				rtn.loc[agent_index[id_reactor], ('OperationMaintenance', 'VariableCost')] = int(operation_maintenance.find('variable').text)
+    				rtn.loc[agentIndex[idReactor], ('OperationMaintenance', 'FixedCost')] = int(operation_maintenance.find('fixed').text)
+    				rtn.loc[agentIndex[idReactor], ('OperationMaintenance', 'VariableCost')] = int(operation_maintenance.find('variable').text)
     			fuel = reactor.find('fuel')
     			if fuel is not None:
-    				rtn.loc[agent_index[id_reactor], ('Fuel', 'Cost')] = int(fuel.find('cost').text)
-    				rtn.loc[agent_index[id_reactor], ('Fuel', 'WasteFee')] = int(fuel.find('waste_fee').text)
+    				supply = {}
+    				waste = {}
+    				for type in supply.findall('type'):
+    					supply[type.find('name').text] = int(type.find('supply_cost').text)
+    					waste[type.find('name').text] = int(type.find('waste_fee').text)
+    				rtn.loc[agentIndex[idReactor], ('Fuel', 'SupplyCost')] = supply
+    				rtn.loc[agentIndex[idReactor], ('Fuel', 'WasteFee')] = waste
     			decommissioning = reactor.find('decommissioning')
     			if decommissioning is not None:
-    				rtn.loc[agent_index[id_reactor], ('Decommissioning', 'Duration')] = int(decommissioning.find('duration').text)
-    				rtn.loc[agent_index[id_reactor], ('Decommissioning', 'OvernightCost')] = int(decommissioning.find('overnight_cost').text)
+    				rtn.loc[agentIndex[idReactor], ('Decommissioning', 'Duration')] = int(decommissioning.find('duration').text)
+    				rtn.loc[agentIndex[idReactor], ('Decommissioning', 'OvernightCost')] = int(decommissioning.find('overnight_cost').text)
     return rtn
 	
 del _eideps, _eischema

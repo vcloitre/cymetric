@@ -44,8 +44,16 @@
 	</operation_maintenance>
 
 	<fuel>
-		<waste_fee></waste_fee> <!-- $/kg -->
-		<cost></cost> <!-- $/kg -->
+		<type>
+			<name></name>
+			<supply_cost></supply_cost>
+			<waste_fee></waste_fee> <!-- $/kg -->
+		</type> <!-- fuel 1 -->
+		<type>
+			<name></name>
+			<supply_cost></supply_cost>
+			<waste_fee></waste_fee> <!-- $/kg -->
+		</type> <!-- fuel 2 -->
 	</fuel>
 
 	<waste_fee>
