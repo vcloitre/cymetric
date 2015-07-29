@@ -393,7 +393,7 @@ def economic_info(series):
     			dfWaste.loc[agentIndex[idInstitution], 'WasteFee'] = waste
     			rtn.loc[agentIndex[idInstitution], ('Fuel', 'SupplyCost')] = dfSupply.loc[agentIndex[idInstitution], 'SupplyCost']
     			rtn.loc[agentIndex[idInstitution], ('Fuel', 'WasteFee')] = dfWaste.loc[agentIndex[idInstitution], 'WasteFee']
-				for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
+    			for idReactor in f_entry[f_entry.ParentId==idInstitution]['AgentId'].tolist():
     				dfSupply.loc[agentIndex[idReactor], 'SupplyCost'] = supply
     				dfWaste.loc[agentIndex[idReactor], 'WasteFee'] = waste
     				rtn.loc[agentIndex[idReactor], ('Fuel', 'SupplyCost')] = dfSupply.loc[agentIndex[idReactor], 'SupplyCost']
