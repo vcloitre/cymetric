@@ -209,6 +209,7 @@ def operation_maintenance(series):
     		print(powerCapacity) # test
     		print(fixedOM) # test
     		print(powerGenerated * variableOM + powerCapacity * fixedOM) # test
+    		print(rtn[rtn.AgentId==id].loc[:, 'Payment']) # test
     		rtn[rtn.AgentId==id].loc[:, 'Payment'] = powerGenerated * variableOM + powerCapacity * fixedOM
     rtn = rtn.reset_index()
     del rtn['Value'], rtn['index']
