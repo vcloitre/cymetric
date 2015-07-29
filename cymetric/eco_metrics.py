@@ -113,14 +113,14 @@ def fuel_cost(series):
     index = pd.MultiIndex.from_tuples(tuples, names=['first', 'second'])
     dfEcoInfo.columns = index
     dfEcoInfo = dfEcoInfo.set_index(('Agent', 'AgentId'))
-    dfTransactions['Quantity'] = dfResources['Quantity']
+    dfTransactions['Quantity'] = dfResources.loc[:, 'Quantity']
     dfTransactions['Payment'] = pd.Series()
-    dfTransactions['Payment'] = dfTransactions['Payment'].fillna(0)
+    dfTransactions.loc[:, 'Payment'] = dfTransactions.loc[:, 'Payment'].fillna(0)
     for agentId in dfEcoInfo.index:
     	tmpInfo = dfEcoInfo.loc[agentId]
     	tmpTrans = dfTransactions[dfTransactions.ReceiverId==agentId]
-    	for commod in tmpInfo[('Fuel', 'SupplyCost')]:
-    		price = tmpInfo[('Fuel', 'SupplyCost')][commod]
+    	for commod in tmpInfo.loc[('Fuel', 'SupplyCost')]:
+    		price = tmpInfo.loc[('Fuel', 'SupplyCost')][commod]
     		tmpTrans[tmpTrans.Commodity==commod].loc[:, 'Payment'] = tmpTrans[tmpTrans.Commodity==commod].loc[:, 'Quantity'] * price
     	dfTransactions[dfTransactions.ReceiverId==agentId].loc[:, 'Payment'] = tmpTrans.loc[:, 'Payment']
     del dfTransactions['Quantity']
@@ -152,7 +152,7 @@ def decommissioning_cost(series):
     dfPower = series[0].reset_index()
     dfPower = dfPower[dfPower['Value'].apply(lambda x: x > 0)]
     dfEntry = series[1].reset_index()
-    dfInfo = series[2].reset_index()
+    dfEcoInfo = series[2].reset_index()
     tuples = (('Agent', 'AgentId'), ('Decommissioning', 'Duration'), ('Decommissioning', 'OvernightCost'))
     index = pd.MultiIndex.from_tuples(tuples, names=['first', 'second'])
     dfEcoInfo.columns = index
