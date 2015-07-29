@@ -93,7 +93,7 @@ del _ccdeps, _ccschema
 
 _fcdeps = [('Resources', ('SimId', 'ResourceId'), 'Quantity'), ('Transactions',
         ('SimId', 'TransactionId', 'ReceiverId', 'ResourceId', 'Commodity'), 
-        'Time'), ('EconomicInfo', (('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Fuel', 'Cost'), ('Fuel', 'WasteFee')), ('Finance','DiscountRate'))]
+        'Time'), ('EconomicInfo', (('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Fuel', 'SupplyCost'), ('Fuel', 'WasteFee')), ('Finance','DiscountRate'))]
 
 _fcschema = [('SimId', ts.UUID), ('TransactionId', ts.INT), ('AgentId', 
           ts.INT), ('Commodity', ts.STRING), ('Payment', ts.DOUBLE), ('Time', 
@@ -106,7 +106,6 @@ def fuel_cost(series):
     """
     # fuel_price = 2360 # $/kg
     # see http://www.world-nuclear.org/info/Economic-Aspects/Economics-of-Nuclear-Power/
-    # need to add a dictionnary with diff commodities and prices (uox, wast etc..)
     dfResources = series[0].reset_index().set_index(['ResourceId'])
     dfTransactions = series[1].reset_index().set_index(['ResourceId'])
     dfEcoInfo = series[2].reset_index()
