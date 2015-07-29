@@ -235,8 +235,9 @@ def economic_info(series):
     	for type in fuel.findall('type'):
     		supply[type.find('name').text] = int(type.find('supply_cost').text)
     		waste[type.find('name').text] = int(type.find('waste_fee').text)
-    	rtn.loc[:, ('Fuel', 'SupplyCost')] = supply
-    	rtn.loc[:, ('Fuel', 'WasteFee')] = waste
+    	for j in rtn.index:
+    		rtn.loc[j, ('Fuel', 'SupplyCost')] = supply
+    		rtn.loc[j, ('Fuel', 'WasteFee')] = waste
     # discount rate is only possible at sim or reg level
     for region in root.findall('region'):
     	idRegion = int(region.find('id').text)
