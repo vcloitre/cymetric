@@ -244,6 +244,7 @@ def economic_info(series):
     		print(rtn.loc[j, ('Fuel', 'SupplyCost')])#test
     		print(supply)#test
     		dfSupply.loc[j, ('Fuel', 'SupplyCost')] = supply
+    		rtn.loc[j, ('Fuel', 'SupplyCost')] = supply
     		dfWaste.loc[j, ('Fuel', 'WasteFee')] = waste
     	print(rtn.loc[:, ('Fuel', 'SupplyCost')])#test
     	print(dfSupply.loc[:, ('Fuel', 'SupplyCost')])#test
