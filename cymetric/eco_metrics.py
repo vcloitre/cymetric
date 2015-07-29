@@ -243,8 +243,8 @@ def economic_info(series):
     		print(rtn)#test
     		print(rtn.loc[j, ('Fuel', 'SupplyCost')])#test
     		print(supply)#test
-    		dfSupply[j, ('Fuel', 'SupplyCost')] = supply
-    		dfWaste[j, ('Fuel', 'WasteFee')] = waste
+    		dfSupply.loc[j, ('Fuel', 'SupplyCost')] = supply
+    		dfWaste.loc[j, ('Fuel', 'WasteFee')] = waste
     	rtn.loc[:, ('Fuel', 'SupplyCost')] = dfSupply[:, ('Fuel', 'SupplyCost')]
     	rtn.loc[:, ('Fuel', 'WasteFee')] = dfWaste[:, ('Fuel', 'WasteFee')]
     # discount rate is only possible at sim or reg level
