@@ -164,7 +164,7 @@ def decommissioning_cost(series):
     reactorsId = dfEntry[dfEntry['Spec'].apply(lambda x: 'REACTOR' in x.upper())]['AgentId'].tolist()
     rtn = pd.DataFrame()
     for id in reactorsId:
-    	duration = dfEcoInfo.loc[id, ('Decommissioning', 'Duration')]
+    	duration = int(dfEcoInfo.loc[id, ('Decommissioning', 'Duration')])
     	overnightCost = dfEcoInfo.loc[id, ('Decommissioning', 'OvernightCost')]
     	cashFlowShape = capital_shape(duration // 2, duration-1)
     	powerCapacity = dfPower[dfPower.AgentId==i]['Value'].iloc[0]
