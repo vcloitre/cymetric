@@ -197,6 +197,12 @@ def overnight_cost(foak, n):
 	http://www.rff.org/events/documents/rffexperiencecurvetalk.pdf LR~20% => b="""
 	b = 0.002888279324826512
 	return foak * n ** (- b)
+	
+def isreactor(id, dfPower):
+	"""Input : reactor id and pandas DataFrame with power generated. Agent generates power if and only if it is a reactor
+	Output : boolean (True if reactor, False if not
+	"""
+	return not dfPower[dfPower.AgentId==id].empty
 
 #######################
 # Price actualization #

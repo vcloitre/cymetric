@@ -199,11 +199,12 @@ def operation_maintenance(series):
     dfEcoInfo = dfEcoInfo.set_index(('Agent', 'AgentId'))
     rtn['Payment'] = pd.Series()
     for id in dfEcoInfo.index:
-    	powerGenerated = rtn[rtn.AgentId==id].loc[:,'Value']
-    	powerCapacity = max(powerGenerated)
-    	fixedOM = dfEcoInfo.loc[id, ('OperationMaintenance', 'FixedCost')]
-    	variableOM = dfEcoInfo.loc[id, ('OperationMaintenance', 'VariableCost')]
-    	rtn[rtn.AgentId==id].loc[:, 'Payment'] = powerGenerated * variableOM + powerCapacity * fixedOM
+    	if isreactor(id):
+    		powerGenerated = rtn[rtn.AgentId==id].loc[:,'Value']
+    		powerCapacity = max(powerGenerated)
+    		fixedOM = dfEcoInfo.loc[id, ('OperationMaintenance', 'FixedCost')]
+    		variableOM = dfEcoInfo.loc[id, ('OperationMaintenance', 'VariableCost')]
+    		rtn[rtn.AgentId==id].loc[:, 'Payment'] = powerGenerated * variableOM + powerCapacity * fixedOM
     rtn = rtn.reset_index()
     del rtn['Value'], rtn['index']
     return rtn
