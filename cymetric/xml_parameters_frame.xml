@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- frame for xml parameters file -->
+<!-- Template for 'parameters.xml' files needed to give economic input data to calculate economic metrics.
+The 'capital', 'operation_maintenance', 'fuel' and 'decommissioning' parameters can be defined either at a simulation, region, institution or facility level.
+The 'finance' parameters have to be defined either at the simulation, region or simulation level.
+The 'truncation' parameters have to be defined at a simulation level. -->
 <model>
-	<iterations></iterations> <!--number of simulations desired (useful with random parameters)-->
 
 	<region>
 		<id></id>
@@ -19,17 +21,16 @@
 
 <!--  if absent, look for it at a lower level (ie Region) -->
 	<finance>
-		<discount_rate></discount_rate>
+		<discount_rate></discount_rate> <!-- % -->
 		<tax_rate></tax_rate> <!-- % -->
-		<return_on_debt></return_on_debt>
-		<return_on_equity></return_on_equity>
+		<return_on_debt></return_on_debt> <!-- % -->
+		<return_on_equity></return_on_equity> <!-- % -->
 	</finance>
 
 	<capital>
-		<deviation></deviation>  <!-- random -->-->
-		<begin></begin>  <!-- months before commissioning -->
+		<deviation></deviation>  <!-- deviation in the Poisson distribution to have random construction begin and construcion duration-->
+		<begin></begin>  <!-- number of months the construction begins before commissioning -->
 		<duration></duration>  <!-- duration of construction in months -->
-		<!--<pace></pace>  <!-- "normal", "rapid" or "slow" -->-->
 		<overnight_cost></overnight_cost>  <!-- $/MW -->
 	</capital>
 
@@ -44,23 +45,21 @@
 	</operation_maintenance>
 
 	<fuel>
-		<type>
-			<name></name>
-			<supply_cost></supply_cost>
+		<type> <!-- fuel 1 -->
+			<name></name> <!-- name of the commodity -->
+			<supply_cost></supply_cost> <!-- $/kg -->
 			<waste_fee></waste_fee> <!-- $/kg -->
-		</type> <!-- fuel 1 -->
-		<type>
-			<name></name>
-			<supply_cost></supply_cost>
+		</type> 
+		<type> <!-- fuel 2 -->
+			<name></name> <!-- name of the commodity -->
+			<supply_cost></supply_cost> <!-- $/kg -->
 			<waste_fee></waste_fee> <!-- $/kg -->
-		</type> <!-- fuel 2 -->
+		</type> 
 	</fuel>
-
-	<waste_fee>
-	</waste_fee>
 	
 	<truncation>
-		<simulation_begin>0</simulation_begin><!--all reactors commissionned at this date will be included in the costs calculations-->
-		<simulation_end>1200</simulation_end><!--all reactors commissionned at this date will be included in the costs calculations (for lcoe, costs for decommissioning will be included). Warning : if reactors are not decommissionned at the end of the simulation, warning message-->
+		<simulation_begin>0</simulation_begin> <!-- number of months -->
+		<simulation_end>1200</simulation_end> <!-- number of months -->
+		<!--all reactors commissionned after the date 'simulation_begin' and before the date 'simulation_end' will be included in the costs calculations-->
 	</truncation>
 </model>

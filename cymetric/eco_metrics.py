@@ -29,7 +29,7 @@ except ImportError:
     from .evaluator import register_metric
     from .eco_inputs import capital_shape, rapid_cap_begin, rapid_cap_duration, slow_cap_begin, slow_cap_duration, default_cap_begin, default_cap_duration, default_cap_overnight, default_cap_shape, default_discount_rate, isreactor
 
-xml_inputs = 'parameters.xml' # temporary solution : always store an xml file in your working directory that you will have to use. This file have to be known
+xml_inputs = 'parameters.xml' # This xml file has to be created to store the economic data needed to calculate the EconomicInfo metric
 
 ## The actual metrics ##
 
@@ -41,13 +41,8 @@ _ccschema = [('SimId', ts.UUID), ('AgentId', ts.INT),
 
 @metric(name='CapitalCost', depends=_ccdeps, schema=_ccschema)
 def capital_cost(series):
-    """cap_cost returns the cash flows per YEAR (MAYBE BETTER PER MONTH FOR THE 
-    RANDOM ANALYSIS) related to the capital costs of a reactor. The overnightCost 
-    cost comes from WEO 2014 (cost in the US). The timeframe for the payment of 
-    the capital costs is drawn from of a graph from EDF. Next steps could be 
-    make the price depends on the reactor technology and make the payment more 
-    realistic, ie include interest rates, improve the linear model and finally 
-    be able to fetch data"""
+    """The CapitalCost metric gives the cash flows at each time step related to the reactor constructions.
+    """
     dfPower = series[0].reset_index()
     dfEntry = series[1].reset_index()
     dfInfo = series[2].reset_index()
@@ -101,8 +96,7 @@ _fcschema = [('SimId', ts.UUID), ('TransactionId', ts.INT), ('AgentId',
 
 @metric(name='FuelCost', depends=_fcdeps, schema=_fcschema)
 def fuel_cost(series):
-    """fuel_cost returns the cash flows related to the fuel costs for power 
-    plants.
+    """The FuelCost metric gives the cash flows at each time step related to the reactor fuel costs. It is the sum of the cost of the fuel the reactor have to purchase and the waste fee.
     """
     # fuel_price = 2360 # $/kg
     # see http://www.world-nuclear.org/info/Economic-Aspects/Economics-of-Nuclear-Power/
@@ -143,7 +137,7 @@ _dcschema = [('SimId', ts.UUID), ('AgentId', ts.INT), ('Payment',
 
 @metric(name='DecommissioningCost', depends=_dcdeps, schema=_dcschema)
 def decommissioning_cost(series):
-    """decom
+    """The Decommissioning metric gives the cash flows at each time step related to the reactor decommissioning.
     """
     # cost = 750000 # decommission cost in $/MW d'Haeseler
     # duration = 150 # decommission lasts about 15 yrs
@@ -188,7 +182,7 @@ _omschema = [('SimId', ts.UUID), ('AgentId', ts.INT), ('Time', ts.INT),
 
 @metric(name='OperationMaintenance', depends=_omdeps, schema=_omschema)
 def operation_maintenance(series):
-    """O&M
+    """The OperationMaintenance metric gives the cash flows at each time step related to the reactor operations and maintenance costs.
     """
     #cost = 15 # $/MWh
     rtn = series[0].reset_index()
@@ -220,7 +214,7 @@ _eischema = [('AgentId', ts.INT), ('Prototype', ts.STRING), ('ParentId', ts.INT)
 		
 @metric(name='EconomicInfo', depends=_eideps, schema=_eischema)
 def economic_info(series):
-    """Write the economic parameters in the database
+    """The EconomicInfo metric stores all economic data needed to calculate the economic metrics. These economic parameters are originally written in 'parameters.xml'.
     """
     tuples = [('Agent', 'Prototype'), ('Agent', 'AgentId'), ('Agent', 'ParentId'), ('Finance','ReturnOnDebt'), ('Finance','ReturnOnEquity'), ('Finance','TaxRate'), ('Finance','DiscountRate'), ('Capital', 'Begin'), ('Capital', 'Duration'), ('Capital', 'Deviation'), ('Capital', 'OvernightCost'), ('Decommissioning', 'Duration'), ('Decommissioning', 'OvernightCost'), ('OperationMaintenance', 'FixedCost'), ('OperationMaintenance', 'VariableCost'), ('Fuel', 'SupplyCost'), ('Fuel', 'WasteFee'), ('Truncation', 'Begin'), ('Truncation', 'End')]
     index = pd.MultiIndex.from_tuples(tuples, names=['first', 'second'])

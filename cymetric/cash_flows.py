@@ -1,6 +1,4 @@
-"""Functions dedicated to visualization of economic calculations. It thus
-provides various functions to plot metrics calculated in eco_metrics.py
-The goal is to offer many options in the plotting of cash flows. For instance, filtering by region, facility type enable to compare different region policies (i.e. to compare different the impact of the variation of financial parameters on the costs).
+"""Functions to calculate more complex metrics that those calculated in eco_metrics.py. Some function are also dedicated to visualization of economic calculations (plotting of metrics). All metrics can be calculated at an agent, institution, region or simulation level.
 """
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,7 +10,6 @@ import warnings
 import os
 import xml.etree.ElementTree as ET
 
-xml_inputs = 'parameters.xml' # temporary solution : always store an xml file in your working directory that you will have to use. This file have to be known
         
 ####################################################################
 # Calculation of average, annual and levalized cost of electricity #
@@ -21,8 +18,8 @@ xml_inputs = 'parameters.xml' # temporary solution : always store an xml file in
 # Reactor level
 
 def annual_costs(output_db, reactor_id, capital=True):
-    """Given a reactor's AgentId, calculate total costs per year over the 
-    lifetime of the reactor.
+    """Input : sqlite output database and reactor's AgentId. It is possible to not take into account the construction costs (capital=False) if the reactor is supposed to have been built before the beginning of the simulation.
+    Output : total reactor costs per year over its lifetime.
     """
     db = dbopen(output_db)
     evaler = Evaluator(db, write=False)
@@ -66,8 +63,8 @@ def annual_costs_present_value(output_db, reactor_id, capital=True):
 	return costs.apply(lambda x : x * actualization)
    
 def average_cost(output_db, reactor_id, capital=True):
-    """Given a reactor's AgentId, gather all annual costs and average it over
-     the lifetime of the reactor.
+    """Input : sqlite output database, reactor's AgentId
+    Output : value (in $/MWh) corresponding to the total costs (sum of annual costs) divided by the total power generated.
     """
     db = dbopen(output_db)
     evaler = Evaluator(db, write=False)
@@ -75,8 +72,9 @@ def average_cost(output_db, reactor_id, capital=True):
     power_generated = sum(f_power[f_power.AgentId==reactor_id]['Value']) * 8760 / 12
     return annual_costs(output_db, reactor_id, capital).sum().sum() / power_generated
     
-def accumulate_capital(output_db, reactor_id):
-	"""-expenditures + income
+def cumulative_capital(output_db, reactor_id):
+	"""Input : sqlite output database and reactor agent id
+	Output : cumulative sum of income and expense (= - expenditures + income)
 	"""
 	costs = - annual_costs(output_db, reactor_id).sum(axis=1)
 	power_gen = power_generated(output_db, reactor_id) * lcoe(output_db, reactor_id)
@@ -88,7 +86,8 @@ def accumulate_capital(output_db, reactor_id):
 	return rtn
     
 def lcoe(output_db, reactor_id, capital=True):
-	"""More efficient than lcoe (~15% faster) and easier to understand
+	"""Input : sqlite output database and reactor agent id
+	Output : Value corresponding to Levelized Cost of Electricity ($/MWh)
 	"""
 	costs = annual_costs(output_db, reactor_id, capital)
 	costs['TotalCosts'] = costs.sum(axis=1)
@@ -112,8 +111,8 @@ def lcoe(output_db, reactor_id, capital=True):
 	return total_costs / power_generated 
 	
 def period_costs(output_db, reactor_id, t0=0, period=20, capital=True):
-	"""New manner to calculate price of electricity, maybe more accurate than lcoe : calculate all costs in a n years period and then determine how much the cost of electricity should be at an institutional level
-	costs used to calculate period costs at date t are [t+t0, t+t0+period]
+	"""Input : sqlite output database, reactor id, time window (t0, period) 
+	Output : cost at each time step t corresponding to actualized sum of expense in [t+t0, t+t0+period] divided by actualized power generated in [t+t0, t+t0+period]
 	"""
 	db = dbopen(output_db)
 	evaler = Evaluator(db, write=False)
@@ -191,7 +190,8 @@ def period_costs2(output_db, reactor_id, t0=0, period=20, capital=True):
 	return rtn
    
 def power_generated(output_db, reactor_id):
-	"""
+	"""Input : sqlite output database and reactor agent id
+	Output : Electricity generated in MWh every years
 	"""
 	db = dbopen(output_db)
 	evaler = Evaluator(db, write=False)
@@ -209,7 +209,8 @@ def power_generated(output_db, reactor_id):
 # Institution level
     
 def institution_annual_costs(output_db, institution_id, capital=True, truncate=True):
-	"""reactors annual costs for a given institution returned as a pandas DataFrame containing total annual costs for each reactor id
+	"""Input : sqlite output database and institution's AgentId. It is possible not to take into account the construction costs (capital=False) if the reactors are supposed to have been built before the beginning of the simulation. It is also possible to truncate the simulation results and only have access to cash flows occurring between the two dates (begin and end) specified in 'parameters.xml'. The truncation allows to let reactors decommission after the end of the simulation and thus to take into account cash flows that occur after the end of the simulation for example to calculate the LCOE.
+	Output : total reactor costs per year over its lifetime at the institution level.
 	"""
 	db = dbopen(output_db)
 	evaler = Evaluator(db, write=False)
@@ -273,8 +274,9 @@ def institution_annual_costs_present_value(output_db, reactor_id, capital=True):
 	actualization.index = costs.index
 	return costs.apply(lambda x : x * actualization)
 	
-def institution_accumulate_capital(output_db, institution_id):
-	"""-expenditures + income
+def institution_cumulative_capital(output_db, institution_id):
+	"""Input : sqlite output database and institution agent id
+	Output : cumulative sum of income and expense (= - expenditures + income)
 	"""
 	costs = - institution_annual_costs(output_db, institution_id).sum(axis=1)
 	power_gen = institution_power_generated(output_db, institution_id) * institution_average_lcoe(output_db, institution_id)['Average LCOE']
@@ -286,8 +288,8 @@ def institution_accumulate_capital(output_db, institution_id):
 	return rtn
 		
 def institution_period_costs(output_db, institution_id, t0=0, period=20, capital=True):
-	"""New manner to calculate price of electricity, maybe more accurate than lcoe : calculate all costs in a n years period and then determine how much the cost of electricity should be at an institutional level
-	costs used to calculate period costs at date t are [t+t0, t+t0+period]
+	"""Input : sqlite output database, institution id, time window (t0, period) 
+	Output : cost at each time step t corresponding to actualized sum of expense in [t+t0, t+t0+period] divided by actualized power generated in [t+t0, t+t0+period]
 	"""
 	db = dbopen(output_db)
 	evaler = Evaluator(db, write=False)
@@ -378,7 +380,8 @@ def institution_period_costs2(output_db, institution_id, t0=0, period=20, capita
 	return rtn
 		
 def institution_power_generated(output_db, institution_id, truncate=True):
-	"""
+	"""Input : sqlite output database and institution agent id
+	Output : Sum of electricity generated in MWh every years in the institution reactor fleet
 	"""
 	db = dbopen(output_db)
 	evaler = Evaluator(db, write=False)
@@ -412,7 +415,8 @@ def institution_power_generated(output_db, institution_id, truncate=True):
 	return rtn.fillna(0)
 
 def institution_lcoe(output_db, institution_id):
-	"""
+	"""Input : sqlite output database and institution agent id
+	Output : Value corresponding to Levelized Cost of Electricity ($/MWh)
 	"""
 	db = dbopen(output_db)
 	evaler = Evaluator(db, write=False)
@@ -446,7 +450,8 @@ def institution_lcoe(output_db, institution_id):
 	return total_costs / power_generated
 
 def institution_average_lcoe(output_db, institution_id):
-	"""Time dependent lcoe
+	"""Input : sqlite output database and institution agent id
+	Output : Variable cost corresponding at each time step (i.e. every year) to the weighted average of the reactors Levelized Cost of Electricity ($/MWh). A reactor is taken into account at time step t only if it is in activity (i.e. already commissioned and not yet decommissioned) at time step t.
 	"""
 	db = dbopen(output_db)
 	evaler = Evaluator(db, write=False)
@@ -496,7 +501,8 @@ def institution_average_lcoe(output_db, institution_id):
 # Region level
 
 def region_annual_costs(output_db, region_id, capital=True, truncate=True):
-	"""reactors annual costs for a given institution returned as a pandas DataFrame containing total annual costs for each reactor id
+	"""Input : sqlite output database and region's AgentId. It is possible not to take into account the construction costs (capital=False) if the reactors are supposed to have been built before the beginning of the simulation. It is also possible to truncate the simulation results and only have access to cash flows occurring between the two dates (begin and end) specified in 'parameters.xml'. The truncation allows to let reactors decommission after the end of the simulation and thus to take into account cash flows that occur after the end of the simulation for example to calculate the LCOE.
+	Output : total reactor costs per year over its lifetime at the region level.
 	"""
 	db = dbopen(output_db)
 	evaler = Evaluator(db, write=False)
@@ -564,8 +570,9 @@ def region_annual_costs_present_value(output_db, region_id, capital=True, trunca
 	actualization.index = costs.index
 	return costs.apply(lambda x : x * actualization)
 		
-def region_accumulate_capital(output_db, region_id):
-	"""-expenditures + income
+def region_cumulative_capital(output_db, region_id):
+	"""Input : sqlite output database and region agent id
+	Output : cumulative sum of income and expense (= - expenditures + income)
 	"""
 	costs = - region_annual_costs(output_db, region_id).sum(axis=1)
 	power_gen = region_power_generated(output_db, region_id) * region_average_lcoe(output_db, region_id)['Average LCOE']
@@ -577,8 +584,8 @@ def region_accumulate_capital(output_db, region_id):
 	return rtn
 		
 def region_period_costs(output_db, region_id, t0=0, period=20, capital=True):
-	"""New manner to calculate price of electricity, maybe more accurate than lcoe : calculate all costs in a n years period and then determine how much the cost of electricity should be at an institutional level
-	costs used to calculate period costs at date t are [t+t0, t+t0+period]
+	"""Input : sqlite output database, region id, time window (t0, period) 
+	Output : cost at each time step t corresponding to actualized sum of expense in [t+t0, t+t0+period] divided by actualized power generated in [t+t0, t+t0+period]
 	"""
 	db = dbopen(output_db)
 	evaler = Evaluator(db, write=False)
@@ -669,7 +676,8 @@ def region_period_costs2(output_db, region_id, t0=0, period=20, capital=True):
 	return rtn
 		
 def region_power_generated(output_db, region_id, truncate=True):
-	"""
+	"""Input : sqlite output database and region agent id
+	Output : Sum of electricity generated in MWh every years in the region reactor fleet
 	"""
 	db = dbopen(output_db)
 	evaler = Evaluator(db, write=False)
@@ -707,7 +715,8 @@ def region_power_generated(output_db, region_id, truncate=True):
 	return rtn.fillna(0)
 
 def region_lcoe(output_db, region_id):
-	"""
+	"""Input : sqlite output database and region agent id
+	Output : Value corresponding to Levelized Cost of Electricity ($/MWh)
 	"""
 	db = dbopen(output_db)
 	evaler = Evaluator(db, write=False)
@@ -741,7 +750,8 @@ def region_lcoe(output_db, region_id):
 	return total_costs / power_generated
 
 def region_average_lcoe(output_db, region_id):
-	"""Time dependent lcoe
+	"""Input : sqlite output database and region agent id
+	Output : Variable cost corresponding at each time step (i.e. every year) to the weighted average of the reactors Levelized Cost of Electricity ($/MWh). A reactor is taken into account at time step t if and only if it is in activity (i.e. already commissioned and not yet decommissioned) at time step t.
 	"""
 	db = dbopen(output_db)
 	evaler = Evaluator(db, write=False)
@@ -795,7 +805,8 @@ def region_average_lcoe(output_db, region_id):
 # Simulation level
 
 def simulation_annual_costs(output_db, capital=True, truncate=True):
-	"""reactors annual costs for a given institution returned as a pandas DataFrame containing total annual costs for each reactor id
+		"""Input : sqlite output database. It is possible not to take into account the construction costs (capital=False) if the reactors are supposed to have been built before the beginning of the simulation. It is also possible to truncate the simulation results and only have access to cash flows occurring between the two dates (begin and end) specified in 'parameters.xml'. The truncation allows to let reactors decommission after the end of the simulation and thus to take into account cash flows that occur after the end of the simulation for example to calculate the LCOE.
+	Output : total reactor costs per year over its lifetime at the simulation level.
 	"""
 	db = dbopen(output_db)
 	evaler = Evaluator(db, write=False)
@@ -851,13 +862,16 @@ def simulation_annual_costs(output_db, capital=True, truncate=True):
 	return costs
 		
 def simulation_annual_costs_present_value(output_db, capital=True, truncate=True):
+	"""Same as annual_cost except all values are actualized to the begin date of the SIMULATION
+	"""
 	df = simulation_annual_costs(output_db, capital)
 	for year in df.index:
 		df.loc[year, :] = df.loc[year, :] / (1 + default_discount_rate) ** (year - df.index[0])
 	return df
 	
-def simulation_accumulate_capital(output_db):
-	"""-expenditures + income
+def simulation_cumulative_capital(output_db):
+	"""Input : sqlite output database
+	Output : cumulative sum of total income and total expense (= - expenditures + income) when all reactors of the simulation are taken into account
 	"""
 	costs = - simulation_annual_costs(output_db).sum(axis=1)
 	power_gen = simulation_power_generated(output_db) * simulation_average_lcoe(output_db)['Average LCOE']
@@ -869,8 +883,8 @@ def simulation_accumulate_capital(output_db):
 	return rtn
 		
 def simulation_period_costs(output_db, t0=0, period=20, capital=True):
-	"""New manner to calculate price of electricity, maybe more accurate than lcoe : calculate all costs in a n years period and then determine how much the cost of electricity should be at an institutional level
-	costs used to calculate period costs at date t are [t+t0, t+t0+period]
+	"""Input : sqlite output database, time window (t0, period) 
+	Output : cost at each time step t corresponding to actualized sum of total expense in [t+t0, t+t0+period] divided by total actualized power generated in [t+t0, t+t0+period] when all reactors of the simulation are taken into account
 	"""
 	db = dbopen(output_db)
 	evaler = Evaluator(db, write=False)
@@ -958,7 +972,8 @@ def simulation_period_costs2(output_db, t0=0, period=20, capital=True):
 	return rtn
 		
 def simulation_power_generated(output_db, truncate=True):
-	"""
+	"""Input : sqlite output database
+	Output : Electricity generated in MWh every years by all the reactors of the simulation
 	"""
 	db = dbopen(output_db)
 	evaler = Evaluator(db, write=False)
@@ -991,7 +1006,8 @@ def simulation_power_generated(output_db, truncate=True):
 	return rtn.fillna(0)
 
 def simulation_lcoe(output_db):
-	"""
+	"""Input : sqlite output database
+	Output : Value corresponding to Levelized Cost of Electricity ($/MWh) when taking into account all reactors commissioned in the simulation
 	"""
 	db = dbopen(output_db)
 	evaler = Evaluator(db, write=False)
@@ -1025,7 +1041,8 @@ def simulation_lcoe(output_db):
 	return total_costs / power_generated
 
 def simulation_average_lcoe(output_db):
-	"""Time dependent lcoe
+	"""Input : sqlite output database and region agent id
+	Output : Variable cost corresponding at each time step (i.e. every year) to the weighted average of the reactors Levelized Cost of Electricity ($/MWh). A reactor is taken into account at time step t if and only if it is in activity (i.e. already commissioned and not yet decommissioned) at time step t.
 	"""
 	db = dbopen(output_db)
 	evaler = Evaluator(db, write=False)
@@ -1221,40 +1238,3 @@ def region_period_costs_plot(output_db, region_id, period=20, capital=True):
 	plt.title('Reactor costs using a ' + str(period) + ' years time frame (region n°' + str(region_id)+ ')')
 	plt.show()
 	
-#lcoe region, lcoe institution
-
-########################################
-# Iteration of simulation calculations #
-########################################
-
-def iter_metric(iteration, output_db, metric):
-	""" metric is a string, output_db as well, iteration integer function works for the following metrics : CapitalCost,
-	"""
-	db = dbopen(output_db)
-	frame = Evaluator(db, write=False).eval(metric)
-	frame = frame.groupby(['AgentId', 'Time']).sum()
-	for i in range(1, iteration):
-		tmp = Evaluator(db, write=False).eval(metric)
-		tmp = tmp.groupby(['AgentId', 'Time']).sum()
-		frame = pd.concat([frame, tmp], axis=1)
-	return frame
-
-def iter_lcoe(output_db, reactor_id, iteration):
-	"""iterate number of lcoe and then plot the distribution
-	"""
-	lst=[]
-	for i in range(0,iteration):
-		lst.append(lcoe(output_db, reactor_id))
-	print(lst) # test
-	plt.hist(x=lst, bins=iteration/10)
-	plt.show()
-
-###############################
-# Plotting other agents costs #
-###############################
-
-def agents_cash(output_db, agent_id):
-    """For a given agent, plot the cash_flows (positive values = income,
-    negative values = expenditures). Could be a region, institution or 
-    facility.
-    """ 
