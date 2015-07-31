@@ -27,3 +27,31 @@ Given all the fuel cycle costs, we are able to gather them all to calculate the 
 Tests
 -----
 Tests are stored in test_eco_metrics.py. The tests are inspired by test_metrics.py.
+
+Using these functions
+---------------------
+
+In order to perform economic analysis, you can follow these steps :
+
+1) Run your simulation with Cyclus
+
+2) Fill an xml file with the economic data needed to calculate the economic metrics and save it as 'parameters.xml' in the folder as your workspace (probably where the output database of the simulation is) where you will investigate the output data.
+
+3) Calculate the different metrics you are interested in :
+
+| - EconomicInfo to see what economic parameters are used for the analysis
+| - CapitalCost to see the cash flows related to the construction costs
+| - OperationMaintenance to see the cash flows related to the operations and maintenance
+| - FuelCost to see cash flows related to the fuel costs
+| - DecommissioningCost to see the costs related to decommissionings occurring during the simulation
+
+4) Use the functions of cash_flows.py to calculate more complex metrics (at agent, institution, region or simulation level) :
+
+| - Annual costs
+| - Levelized Cost Of Electricity
+| - Average Levelized Cost Of Electricity
+| - Accumulated capital
+| - Period Costs
+
+5) There are also some functions dedicated to plot these metrics in cash_flows.py
+
