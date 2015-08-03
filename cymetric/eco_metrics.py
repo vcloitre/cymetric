@@ -184,7 +184,7 @@ _omschema = [('SimId', ts.UUID), ('AgentId', ts.INT), ('Time', ts.INT),
 def operation_maintenance(series):
     """The OperationMaintenance metric gives the cash flows at each time step related to the reactor operations and maintenance costs.
     """
-    #cost = 15 # $/MWh
+    #cost = 10 # $/MWh
     rtn = series[0].reset_index()
     dfEcoInfo = series[1].reset_index()
     tuples = (('Agent', 'AgentId'), ('OperationMaintenance', 'FixedCost'), ('OperationMaintenance', 'VariableCost'))
