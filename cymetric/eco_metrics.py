@@ -110,13 +110,15 @@ def fuel_cost(series):
     dfTransactions['Quantity'] = dfResources.loc[:, 'Quantity']
     dfTransactions['Payment'] = pd.Series()
     dfTransactions.loc[:, 'Payment'] = dfTransactions.loc[:, 'Payment'].fillna(0)
+    dfTransactions['Tmp'] = pd.Series()
     for agentId in dfEcoInfo.index:
-    	tmpInfo = dfEcoInfo.loc[agentId]
+    	tmpEcoInfo = dfEcoInfo.loc[agentId]
     	tmpTrans = dfTransactions[dfTransactions.ReceiverId==agentId]
-    	for commod in tmpInfo.loc[('Fuel', 'SupplyCost')]:
-    		price = tmpInfo.loc[('Fuel', 'SupplyCost')][commod]
-    		tmpTrans[tmpTrans.Commodity==commod].loc[:, 'Payment'] = tmpTrans[tmpTrans.Commodity==commod].loc[:, 'Quantity'] * price
-    	dfTransactions[dfTransactions.ReceiverId==agentId].loc[:, 'Payment'] = tmpTrans.loc[:, 'Payment']
+    	for commod in tmpEcoInfo.loc[('Fuel', 'SupplyCost')]:
+    		price = tmpEcoInfo.loc[('Fuel', 'SupplyCost')][commod]
+    		tmpTrans2 = tmpTrans[tmpTrans.Commodity==commod]
+    		dfTransactions.loc[:, 'Tmp'] = tmpTrans2.loc[:, 'Quantity'] * price		
+    	dfTransactions.loc[:, 'Payment'] += dfTransactions.loc[:, 'Payment'].fillna(0)
     del dfTransactions['Quantity']
     rtn = dfTransactions.reset_index()
     subset = rtn.columns.tolist()
@@ -197,6 +199,7 @@ def operation_maintenance(series):
     	if isreactor(id, rtn):
     		powerGenerated = rtn[rtn.AgentId==id].loc[:,'Value']
     		powerCapacity = max(powerGenerated)
+    		powerGenerated *= 8760 / 12
     		fixedOM = dfEcoInfo.loc[id, ('OperationMaintenance', 'FixedCost')]
     		variableOM = dfEcoInfo.loc[id, ('OperationMaintenance', 'VariableCost')]
     		rtn['tmp'] = powerGenerated * variableOM + powerCapacity * fixedOM
