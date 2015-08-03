@@ -120,6 +120,7 @@ def fuel_cost(series):
     		dfTransactions.loc[:, 'Tmp'] = tmpTrans2.loc[:, 'Quantity'] * price		
     	dfTransactions.loc[:, 'Payment'] += dfTransactions.loc[:, 'Payment'].fillna(0)
     del dfTransactions['Quantity']
+    del dfTransactions['Tmp']
     rtn = dfTransactions.reset_index()
     subset = rtn.columns.tolist()
     subset = subset[1:5]+subset[6:]+subset[5:6]
