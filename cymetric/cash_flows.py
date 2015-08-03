@@ -853,7 +853,7 @@ def simulation_annual_costs(output_db, capital=True, truncate=True):
 def simulation_annual_costs_present_value(output_db, capital=True, truncate=True):
 	"""Same as annual_cost except all values are actualized to the begin date of the SIMULATION
 	"""
-	df = simulation_annual_costs(output_db, capital)
+	df = simulation_annual_costs(output_db, capital, truncate)
 	for year in df.index:
 		df.loc[year, :] = df.loc[year, :] / (1 + default_discount_rate) ** (year - df.index[0])
 	return df
