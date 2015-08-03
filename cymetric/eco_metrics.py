@@ -118,7 +118,7 @@ def fuel_cost(series):
     		price = tmpEcoInfo.loc[('Fuel', 'SupplyCost')][commod]
     		tmpTrans2 = tmpTrans[tmpTrans.Commodity==commod]
     		dfTransactions.loc[:, 'Tmp'] = tmpTrans2.loc[:, 'Quantity'] * price		
-    	dfTransactions.loc[:, 'Payment'] += dfTransactions.loc[:, 'Payment'].fillna(0)
+    	dfTransactions.loc[:, 'Payment'] += dfTransactions.loc[:, 'Tmp'].fillna(0)
     del dfTransactions['Quantity']
     del dfTransactions['Tmp']
     rtn = dfTransactions.reset_index()
