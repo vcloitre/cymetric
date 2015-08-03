@@ -841,10 +841,11 @@ def simulation_annual_costs(output_db, capital=True, truncate=True):
 	costs['Fuel'] = dfFuelCosts['Payment']
 	costs = costs.fillna(0)
 	costs['Year'] = (costs.index + initialMonth - 1) // 12 + initialYear
-	endYear = (simulationEnd + initialMonth - 1) // 12 + initialYear
-	costs = costs[costs['Year'].apply(lambda x : x <= endYear)]
-	beginYear = (simulationBegin + initialMonth - 1) // 12 + initialYear
-	costs = costs[costs['Year'].apply(lambda x : x >= beginYear)]
+	if truncate:
+		endYear = (simulationEnd + initialMonth - 1) // 12 + initialYear
+		costs = costs[costs['Year'].apply(lambda x : x <= endYear)]
+		beginYear = (simulationBegin + initialMonth - 1) // 12 + initialYear
+		costs = costs[costs['Year'].apply(lambda x : x >= beginYear)]
 	if not capital:
 		del costs['Capital']
 	costs = costs.groupby('Year').sum()
