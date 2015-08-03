@@ -159,13 +159,8 @@ on a brownfield, for a single unit
 shapes = ["triangle", "rectangle", "plateau"]
 
 def capital_shape(t0=5, duration=10, shape='triangle'):
-    """Returns the values corresponding to annual costs corresponding to  
-    capital cots (per kW). Duration could be optional, and then one thousand 
-    simulation with random durations could be calculated. An important feature 
-    is the possibility to change both the date before commissioning when the 
-    paiement starts and the duration (increases costs, for the future, an could
-    be to make the the price variable, as a function of the duration). 3 modes
-    can be chosen : delay, standard or in advance
+    """Input : two parameters defining the size of the shape
+    Output : curve with integral equals to one in the requested shape.
     """
     if not isinstance(t0, int):
         raise Exception("Year begin for paiement must be an integer")
@@ -186,12 +181,15 @@ def capital_shape(t0=5, duration=10, shape='triangle'):
         raise Exception("Wrong shape, valid shapes are in the following list : " + str(shapes))
         
 def discount_rate(amountOfDebt, amountOfEquity, taxRate, returnOnDebt, returnOnEquity, inflationRate):
-	"""D'Haeseleer p.81"""
+	"""Input : share of debt, share of equity, tax rate, return on debt, return on equity and inflation rate
+	Output : corresponding discount rate
+	D'Haeseleer p.81"""
 	nominalRate = returnOnDebt * amountOfDebt + returnOnEquity * amountOfEquity
 	realRate = (1 + nominalRate) / (1 + inflationRate) - 1
 	
 def overnight_cost(foak, n):
-	"""gives price of noak given foak price
+	"""Input : price of First Of A Kind reactor 
+	Output : price of n-th Of A Kind reactor
 	http://www.power-eng.com/content/dam/pe/online-articles/documents/2011/july/EPRI.pdf
 	https://www.netl.doe.gov/File%20Library/research/energy%20analysis/publications/QGESS_FOAKtoNOAK_Final.pdf
 	http://www.rff.org/events/documents/rffexperiencecurvetalk.pdf LR~20% => b="""
@@ -199,8 +197,8 @@ def overnight_cost(foak, n):
 	return foak * n ** (- b)
 	
 def isreactor(id, dfPower):
-	"""Input : reactor id and pandas DataFrame with power generated. Agent generates power if and only if it is a reactor
-	Output : boolean (True if reactor, False if not
+	"""Input : reactor agent id and pandas DataFrame with power generated. Agent generates power if and only if it is a reactor
+	Output : boolean (True if agent id corresponds to a reactor, False if not)
 	"""
 	return not dfPower[dfPower.AgentId==id].empty
 
@@ -223,13 +221,3 @@ def inflation(price, date):
 	"""Give the 2015 $ value of a price given in 'date' $
 	"""
 	return price * f_inflation.loc[date, 0]
-    
-# Some useful functions #
-
-def isfacility(series, facility):
-	"""Function used to know whether a facility is a source of uranium, an enrichment facility, a fuel fabrication facility, a reactor, a reprocessing facility or a storage facility. 
-	Input : series of prototypes and facility name among source, enrichment, fuel fabrication, reactor, reprocessing, storage.
-	Output : series of booleans, True if prototype corresponds to the the input facility, False if not.
-	This function assumes that user
-	"""
-	
