@@ -8,8 +8,6 @@ from cymetric.evaluator import Evaluator
 from cymetric.eco_inputs import default_cap_overnight, default_discount_rate, default_fuel_price, actualization_vector
 import warnings
 import os
-import xml.etree.ElementTree as ET
-
         
 ####################################################################
 # Calculation of average, annual and levalized cost of electricity #
