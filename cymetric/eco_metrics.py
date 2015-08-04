@@ -433,7 +433,7 @@ def economic_info(series):
     				rtn.loc[agentIndex[idFacility], ('Fuel', 'WasteFee')] = dfWaste.loc[agentIndex[idFacility], 'WasteFee']
     		for facility in institution.findall('facility'):
     			idFacility = int(facility.find('id').text)
-    			capital = reactor.find('capital')
+    			capital = facility.find('capital')
     			if capital is not None:
     				rtn.loc[agentIndex[idFacility], ('Capital', 'Begin')] = int(capital.find('begin').text)
     				rtn.loc[agentIndex[idFacility], ('Capital', 'Duration')] = int(capital.find('duration').text)
