@@ -153,9 +153,72 @@ on a brownfield, for a twin unit
 = about 4250 EUR2012/kW for FOAK2 with uncertainty -20 to + 30%
 on a brownfield, for a single unit
 """
-##############################
-# Modeling power plant costs #
-##############################
+####################
+# Mining & Milling #
+####################
+
+def isuraniumsource(dfEntry, id):
+	"""Input : Agents entry table and agent id
+	Output : boolean (True if facility is a mining facility, False if not).
+	"""
+	return 'SOURCE' in dfEntry[dfEntry.AgentId==id]['Spec'].iloc[0].upper()
+
+##############
+# Conversion #
+##############
+
+def isconversionplant(dfEntry, id):
+	"""Input : Agent entry table and agent id
+	Output : boolean (True if facility is a conversion plant, False if not).
+	"""
+	return 'CONV' in dfEntry[dfEntry.AgentId==id]['Spec'].iloc[0].upper()
+
+##############
+# Enrichment #
+##############
+
+def swu(feedMass, feedAssay, productMass, productAssay, wasteMass, wasteAssay):
+	"""Input : mass and assay of feed, product and waste
+	Output : corresponding amount of swu
+	"""
+	return wasteMass * V(wasteAssay) + productMass * V(productAssay) - feedMass * V(feedAssay)
+	
+def waste_mass(feedMass, productMass):
+	"""Input : feed and product masses
+	Output : waste mass
+	"""
+	return feedMass - productMass
+	
+def waste_assay(feedMass, feedAssay, productMass, productAssay, wasteMass):
+	"""Input : mass of feed, product and waste, assay of feed and product
+	Output : waste assay
+	"""
+	return (feedMass * feedAssay - productMass * productAssay) / wasteMass
+
+def V(x):
+	"""Value function used to calculate the swu
+	"""
+	return (2 * x - 1) * math.log(x / (1 - x))
+	
+def isenrichmentplant(dfEntry, id):
+	"""Input : Agents entry table and agent id
+	Output : boolean (True if facility is an enrichment plant, False if not).
+	"""
+	return 'ENRICH' in dfEntry[dfEntry.AgentId==id]['Spec'].iloc[0].upper()
+
+###############
+# Fabrication #
+###############
+
+def isfuelfab(dfEntry, id):
+	"""Input : Agents entry table and agent id
+	Output : boolean (True if facility is a fuel fabrication plant, False if not).
+	"""
+	return 'FAB' in dfEntry[dfEntry.AgentId==id]['Spec'].iloc[0].upper()
+
+###########
+# Reactor #
+###########
 
 shapes = ["triangle", "rectangle", "plateau"]
 
@@ -202,34 +265,17 @@ def isreactor(id, dfPower):
 	Output : boolean (True if agent id corresponds to a reactor, False if not)
 	"""
 	return not dfPower[dfPower.AgentId==id].empty
-	
+
 ##############
-# Enrichment #
+# Separation #
 ##############
 
-def swu(feedMass, feedAssay, productMass, productAssay, wasteMass, wasteAssay):
-	"""Input : mass and assay of feed, product and waste
-	Output : corresponding amount of swu
+def isseparation(dfEntry, id):
+	"""Input : Agents entry table and agent id
+	Output : boolean (True if facility is a separation plant, False if not).
 	"""
-	return wasteMass * V(wasteAssay) + productMass * V(productAssay) - feedMass * V(feedAssay)
-	
-def waste_mass(feedMass, productMass):
-	"""Input : feed and product masses
-	Output : waste mass
-	"""
-	return feedMass - productMass
-	
-def waste_assay(feedMass, feedAssay, productMass, productAssay, wasteMass):
-	"""Input : mass of feed, product and waste, assay of feed and product
-	Output : waste assay
-	"""
-	return (feedMass * feedAssay - productMass * productAssay) / wasteMass
+	return 'SEP' in dfEntry[dfEntry.AgentId==id]['Spec'].iloc[0].upper()
 
-def V(x):
-	"""Value function used to calculate the swu
-	"""
-	return (2 * x - 1) * math.log(x / (1 - x))
-		
 
 #######################
 # Price actualization #
